@@ -11,6 +11,7 @@ sys.path.insert(0, str(ROOT / "license-server"))
 sys.path.insert(0, str(ROOT / "src"))
 
 fastapi = pytest.importorskip("fastapi")
+pytest.importorskip("httpx")  # fastapi's TestClient needs httpx
 from fastapi.testclient import TestClient  # noqa: E402
 
 

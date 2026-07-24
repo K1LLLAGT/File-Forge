@@ -9,6 +9,7 @@ sys.path.insert(0, str(ROOT / "cloud-api"))
 sys.path.insert(0, str(ROOT / "src"))
 
 pytest.importorskip("fastapi")
+pytest.importorskip("httpx")  # fastapi's TestClient needs httpx
 from fastapi.testclient import TestClient  # noqa: E402
 
 
