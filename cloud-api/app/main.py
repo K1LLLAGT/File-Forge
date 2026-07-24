@@ -20,6 +20,7 @@ from __future__ import annotations
 import sys
 import tempfile
 from contextlib import asynccontextmanager
+from typing import Optional
 from pathlib import Path
 
 # Make the shared conversion engine importable from the sibling src/ tree.
@@ -48,7 +49,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="FileForge Cloud API", version="1.0.0", lifespan=lifespan)
 
 
-def require_key(x_api_key: str | None = Header(default=None)) -> str:
+def require_key(x_api_key: Optional[str] = Header(default=None)) -> str:
     if not x_api_key or not meter.known(x_api_key):
         raise HTTPException(status_code=401, detail="missing or invalid X-API-Key")
     return x_api_key

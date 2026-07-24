@@ -25,6 +25,7 @@ from __future__ import annotations
 import os
 import sys
 from pathlib import Path
+from typing import Optional
 
 # Reuse the engine's signing logic so server-issued keys validate in the CLI.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
@@ -42,7 +43,7 @@ app = FastAPI(title="FileForge License Server", version="1.0.0")
 store = LicenseStore(os.environ.get("FF_LICENSE_DB", "licenses.db"))
 
 
-def _admin(x_admin_token: str | None = Header(default=None)) -> None:
+def _admin(x_admin_token: Optional[str] = Header(default=None)) -> None:
     expected = os.environ.get("FF_ADMIN_TOKEN")
     if not expected or x_admin_token != expected:
         raise HTTPException(status_code=401, detail="bad admin token")
@@ -53,7 +54,7 @@ def _fulfill(
     sale_id: str,
     product: str,
     email: str,
-    tier_override: str | None = None,
+    tier_override: Optional[str] = None,
 ) -> LicenseRecord:
     """Idempotently mint + persist a key for a verified sale."""
     existing = store.get_by_sale(sale_id)
