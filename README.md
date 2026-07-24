@@ -42,7 +42,6 @@ pip install -e '.[cloud]'    # run the Cloud API locally
 | `android/`          | Strategy 2 — Android GUI           | Compose + Chaquopy architecture & skeleton   |
 | `magisk-module/`    | Strategy 9 — Magisk module         | Flashable system-wide install                |
 | `scripts/`          | Fulfillment / packaging            | License issuing, Magisk zip builder          |
-| `docs/monetization-plan.md` | Business document          | Full 10-strategy monetization & roadmap      |
 
 ## Tiers
 
