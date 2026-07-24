@@ -29,20 +29,27 @@ def test_video_routes_are_pro_tier():
     assert conv.tier == "pro"
 
 
-def test_free_tier_list_excludes_video():
-    free = registry.routes(tier="free")
-    assert all(c.tier == "free" for c in free)
-    assert registry.get("mov", "mp4") not in free
+def test_video_routes_still_tagged_pro_in_registry():
+    # The tier tag is retained (dormant) even though nothing is gated anymore.
+    assert registry.get("mov", "mp4").tier == "pro"
 
 
 def test_unknown_preset_rejected():
     from fileforge.core.registry import ConversionError
-    ent = License(Tier.ENTERPRISE, "x", True)
+    free = License(Tier.FREE, "x", True)
     with pytest.raises(ConversionError):
-        video.compress("a.mov", "b.mp4", preset="nope", license=ent)
+        video.compress("a.mov", "b.mp4", preset="nope", license=free)
 
 
-def test_compress_requires_pro_license():
+def test_compress_allowed_on_free_tier():
+    # FileForge is free: no license is required. With a valid preset the only
+    # thing that can stop the conversion is a missing ffmpeg binary, never a
+    # license — so we must NOT get a PermissionError.
+    from fileforge.core.registry import ConversionError
     free = License(Tier.FREE, "anon", True)
-    with pytest.raises(PermissionError):
+    try:
         video.compress("a.mov", "b.mp4", preset="small", license=free)
+    except PermissionError:
+        raise AssertionError("free tier should not be blocked")
+    except (ConversionError, Exception):
+        pass  # ffmpeg missing / no such file is fine; gating is what we test

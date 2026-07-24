@@ -136,11 +136,10 @@ def current_license() -> License:
 
 
 def require(tier: Tier, license: License | None = None) -> License:
-    lic = license or current_license()
-    if lic.tier < tier:
-        raise PermissionError(
-            f"this feature requires the {tier.name.title()} tier; "
-            f"active tier is {lic.tier.name.title()}. "
-            "Set FILEFORGE_LICENSE with a valid key."
-        )
-    return lic
+    # FileForge is free: every feature is unlocked for everyone. This stays a
+    # no-op (never raises) so the dormant licensing code and all call sites keep
+    # working unchanged. To gate features again, restore the tier check:
+    #     lic = license or current_license()
+    #     if lic.tier < tier: raise PermissionError(...)
+    #     return lic
+    return license or current_license()

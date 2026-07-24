@@ -56,27 +56,22 @@ See **[docs/monetization-plan.md](docs/monetization-plan.md)** for the complete
 pricing, feature matrix, distribution, marketing, revenue projections, and
 six-month execution roadmap.
 
-## Licensing model (technical)
+## Everything is free
 
-Features gate on offline, **Ed25519-signed** keys (`FF2.<payload>.<signature>`).
-The server signs with a secret **private** key; clients verify **offline** with
-only the **public** key — no shared secret ships with the client, so keys can't
-be forged by inspecting the distributed binary. Verification is a vendored,
-dependency-free Ed25519 (works on Termux/Magisk/Android with zero installs).
+FileForge is **completely free** — every feature (batch, parallel processing,
+OCR, PDF merge/split, video presets, TTS) is available to everyone with no
+license required:
 
 ```bash
-# One-time: generate a keypair and embed the public key in the client
-python scripts/keygen.py --write
-
-# Server side (or your purchase webhook) mints keys with the private key:
-export FILEFORGE_PRIVATE_KEY="<private from keygen>"
-export FILEFORGE_LICENSE="$(python scripts/issue_license.py --tier pro --subject demo)"
-
-fileforge batch ./images png jpg --recursive --workers 8   # Pro unlocked
+fileforge batch ./images png jpg --recursive --workers 8
+fileforge video clip.mov out.mp4 --preset web-720p
 ```
 
-Without a valid key everything runs at the **Free** tier. Keys are minted from a
-purchase webhook (Gumroad/Payhip) in production — see `license-server/`.
+The Ed25519 licensing system and the license server are **kept in the repo but
+dormant** — `licensing.require()` is a no-op, so nothing is gated. If you ever
+want to reintroduce paid tiers, restore the tier check in
+`src/fileforge/licensing.py` (the original code is preserved in a comment there)
+and re-enable the `license-server/`.
 
 ## Run the Cloud API locally
 

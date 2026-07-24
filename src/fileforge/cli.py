@@ -53,18 +53,16 @@ def _do_convert(args: argparse.Namespace) -> int:
 
 
 def _do_list(args: argparse.Namespace) -> int:
-    lic = current_license()
-    routes = registry.routes(tier=lic.tier.name.lower())
+    routes = registry.routes()  # FileForge is free — every conversion is available
     if args.source:
         routes = [c for c in routes if c.source_ext == args.source.lower()]
     if not routes:
         print("no matching converters")
         return 0
-    print(f"available conversions (tier: {lic.name}):")
+    print("available conversions:")
     for c in routes:
         flag = "" if c.available() else "  [needs: %s]" % ", ".join(c.requires)
-        star = "" if c.tier == "free" else f"  ({c.tier})"
-        print(f"  {c.source_ext:>6} -> {c.target_ext:<6} {c.description}{star}{flag}")
+        print(f"  {c.source_ext:>6} -> {c.target_ext:<6} {c.description}{flag}")
     return 0
 
 
@@ -142,7 +140,7 @@ def build_parser() -> argparse.ArgumentParser:
     l.add_argument("--source", help="filter by source extension")
     l.set_defaults(func=_do_list)
 
-    b = sub.add_parser("batch", help="batch-convert a directory (Pro)")
+    b = sub.add_parser("batch", help="batch-convert a directory (parallel)")
     b.add_argument("directory")
     b.add_argument("source_ext")
     b.add_argument("target_ext")
@@ -155,7 +153,7 @@ def build_parser() -> argparse.ArgumentParser:
     lic.add_argument("--status", action="store_true")
     lic.set_defaults(func=_do_license)
 
-    v = sub.add_parser("video", help="compress/transcode video with a preset (Pro)")
+    v = sub.add_parser("video", help="compress/transcode video with a preset")
     v.add_argument("source", nargs="?")
     v.add_argument("target", nargs="?")
     v.add_argument("--preset", default="balanced", help="preset name (see --list-presets)")

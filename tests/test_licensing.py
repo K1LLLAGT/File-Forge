@@ -71,13 +71,15 @@ def test_no_public_key_configured_is_free(keypair):
     assert not lic.valid
 
 
-def test_require_blocks_lower_tier():
+def test_require_never_blocks_free_tier():
+    # FileForge is free: require() is a no-op and never raises, so every
+    # feature is available even on the FREE tier.
     free = License(Tier.FREE, "anon", True)
-    with pytest.raises(PermissionError):
-        require(Tier.PRO, free)
+    assert require(Tier.PRO, free).tier is Tier.FREE
+    assert require(Tier.ENTERPRISE, free).tier is Tier.FREE
 
 
-def test_require_allows_equal_or_higher(keypair):
+def test_require_passes_through_license(keypair):
     priv, pub = keypair
     ent = validate_key(issue_key(Tier.ENTERPRISE, "big-co", private_key=priv), public_key=pub)
     assert require(Tier.PRO, ent).tier is Tier.ENTERPRISE
