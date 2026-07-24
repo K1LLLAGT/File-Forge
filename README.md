@@ -15,7 +15,7 @@ a free CLI, a Pro desktop/Android build, a Cloud API, and Enterprise licensing.
 ## Quick start (free CLI)
 
 ```bash
-pip install -e .            # or: pip install pyfile-convert  (once published)
+pip install -e .            # or: pip install pyfile-convert  (once published; import/command stay `fileforge`)
 fileforge list             # show conversions available to your tier
 fileforge convert notes.md notes.html
 fileforge convert data.json data.csv

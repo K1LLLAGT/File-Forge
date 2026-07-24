@@ -22,4 +22,5 @@ htmlcov/
 
 # FileForge
 *.license
+*.db
 scratch/

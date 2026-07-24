@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import sys
 import tempfile
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 # Make the shared conversion engine importable from the sibling src/ tree.
@@ -31,17 +32,20 @@ from fileforge.core.registry import ConversionError, load_builtin_converters, re
 
 from .metering import Meter, Plan
 
-app = FastAPI(title="FileForge Cloud API", version="1.0.0")
 meter = Meter()
 
 
-@app.on_event("startup")
-def _startup() -> None:
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     load_builtin_converters()
     # Demo keys mirroring the pricing tiers. Replace with a real key store.
     meter.register_key("demo-metered", Plan.METERED)     # $5 / 500 conv
     meter.register_key("demo-lifetime", Plan.LIFETIME)   # $49 unlimited
     meter.register_key("demo-enterprise", Plan.ENTERPRISE)  # $199/yr
+    yield
+
+
+app = FastAPI(title="FileForge Cloud API", version="1.0.0", lifespan=lifespan)
 
 
 def require_key(x_api_key: str | None = Header(default=None)) -> str:

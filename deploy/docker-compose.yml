@@ -1,0 +1,39 @@
+# Run both FileForge services locally (or on a VPS) behind one compose file.
+#   docker compose -f deploy/docker-compose.yml up --build
+#
+# Cloud API  -> http://localhost:8080
+# License    -> http://localhost:8081
+services:
+  cloud-api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    environment:
+      SERVICE: cloud-api
+      PORT: "8080"
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  license:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    environment:
+      SERVICE: license
+      PORT: "8080"
+      FF_LICENSE_DB: /data/licenses.db
+      # Set these for real fulfillment (see license-server/README.md):
+      # FF_PRODUCT_MAP: "pro-desktop=pro,cloud-lifetime=cloud"
+      # FILEFORGE_SALT: "change-me"
+      # GUMROAD_SELLER_ID: "..."
+      # PAYHIP_SECRET: "..."
+      # FF_ADMIN_TOKEN: "..."
+    volumes:
+      - license-data:/data
+    ports:
+      - "8081:8080"
+    restart: unless-stopped
+
+volumes:
+  license-data:

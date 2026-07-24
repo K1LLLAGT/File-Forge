@@ -1,0 +1,44 @@
+# Fly.io deployment for the FileForge Cloud API.
+#   fly launch --no-deploy --copy-config   # first time (creates the app)
+#   fly deploy
+#
+# Switch this same config to the license server by setting SERVICE=license
+# (either here under [env] or with `fly secrets set SERVICE=license`).
+
+app = "fileforge-cloud"
+primary_region = "iad"
+
+[build]
+  dockerfile = "deploy/Dockerfile"
+
+[env]
+  SERVICE = "cloud-api"
+  PORT = "8080"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.http_options.response.headers]
+    X-Frame-Options = "DENY"
+
+[[http_service.checks]]
+  method = "GET"
+  path = "/healthz"
+  interval = "15s"
+  timeout = "3s"
+  grace_period = "5s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+
+# A persistent volume for the license server's SQLite DB. Not needed for the
+# stateless Cloud API. Create with: fly volumes create ffdata --size 1
+# and set FF_LICENSE_DB=/data/licenses.db.
+# [mounts]
+#   source = "ffdata"
+#   destination = "/data"

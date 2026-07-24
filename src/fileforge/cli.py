@@ -103,6 +103,29 @@ def _do_license(args: argparse.Namespace) -> int:
     return 0
 
 
+def _do_video(args: argparse.Namespace) -> int:
+    from fileforge.pro.video import PRESETS, compress  # lazily imported (Pro)
+
+    if args.list_presets:
+        print("video presets:")
+        for p in PRESETS.values():
+            print(f"  {p.name:<11} {p.description}")
+        return 0
+    if not args.source or not args.target:
+        print("error: source and target are required (or use --list-presets)", file=sys.stderr)
+        return 2
+    try:
+        out = compress(args.source, args.target, preset=args.preset)
+    except PermissionError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 6
+    except ConversionError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 5
+    print(f"ok: {args.source} -> {out} (preset: {args.preset})")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="fileforge", description="FileForge file converter")
     p.add_argument("--version", action="version", version=f"fileforge {__version__}")
@@ -131,6 +154,13 @@ def build_parser() -> argparse.ArgumentParser:
     lic = sub.add_parser("license", help="show license/tier status")
     lic.add_argument("--status", action="store_true")
     lic.set_defaults(func=_do_license)
+
+    v = sub.add_parser("video", help="compress/transcode video with a preset (Pro)")
+    v.add_argument("source", nargs="?")
+    v.add_argument("target", nargs="?")
+    v.add_argument("--preset", default="balanced", help="preset name (see --list-presets)")
+    v.add_argument("--list-presets", action="store_true", help="list available presets")
+    v.set_defaults(func=_do_video)
     return p
 
 
