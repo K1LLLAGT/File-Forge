@@ -34,7 +34,7 @@ from fileforge import _ed25519 as ed
 # Public key embedded in the client. Replace with your own via
 # `python scripts/keygen.py --write`. Empty means "not configured" — no key
 # can be verified until you set one (or provide FILEFORGE_PUBLIC_KEY).
-EMBEDDED_PUBLIC_KEY = ""
+EMBEDDED_PUBLIC_KEY = "NqHY-gjx1rlhxIuKAwdt9nC92L8-39Rj6l7p-TFhaiM"
 
 
 class Tier(IntEnum):
