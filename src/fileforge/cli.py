@@ -106,7 +106,7 @@ def _do_list(args: argparse.Namespace) -> int:
 
 
 def _do_batch(args: argparse.Namespace) -> int:
-    from fileforge.pro.batch import convert_batch  # imported lazily (Pro)
+    from fileforge.converters.batch import convert_batch  # imported lazily (Pro)
 
     def _progress(res) -> None:
         mark = "ok " if res.ok else "ERR"

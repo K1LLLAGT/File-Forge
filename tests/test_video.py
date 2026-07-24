@@ -2,7 +2,7 @@ import pytest
 
 from fileforge.core.registry import load_builtin_converters, registry
 from fileforge.licensing import License, Tier
-from fileforge.pro import video
+from fileforge.converters import video
 
 
 @pytest.fixture(autouse=True, scope="module")

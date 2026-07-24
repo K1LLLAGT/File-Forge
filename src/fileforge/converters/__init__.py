@@ -1,2 +1,3 @@
-"""Built-in converter modules. Importing the package is side-effect free;
-call ``fileforge.core.load_builtin_converters()`` to populate the registry."""
+"""Pro-tier features. Every entry point in this package calls
+``licensing.require(Tier.PRO)`` (or higher) before doing work, so the same
+codebase ships to all tiers and unlocks by license key."""
