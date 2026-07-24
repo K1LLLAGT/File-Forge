@@ -1,0 +1,17 @@
+#!/system/bin/sh
+# FileForge system-wide launcher (Magisk overlay -> /system/bin/fileforge).
+# Delegates to the bundled Python package. Prefers Termux python, then any
+# python3 on PATH. Keeps the module self-contained on-device.
+
+FF_HOME="${FF_HOME:-/data/adb/modules/fileforge/pkg}"
+PYTHONPATH="$FF_HOME:$PYTHONPATH"
+export PYTHONPATH
+
+if command -v python3 >/dev/null 2>&1; then
+    exec python3 -m fileforge.cli "$@"
+elif [ -x /data/data/com.termux/files/usr/bin/python ]; then
+    exec /data/data/com.termux/files/usr/bin/python -m fileforge.cli "$@"
+else
+    echo "fileforge: no python interpreter found (install Termux python)" >&2
+    exit 127
+fi

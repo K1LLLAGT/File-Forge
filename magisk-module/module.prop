@@ -1,0 +1,7 @@
+id=fileforge
+name=FileForge (system-wide file converter)
+version=v0.1.0
+versionCode=1
+author=K1LLLAGT
+description=Installs the FileForge CLI system-wide so `fileforge` works from any shell, Termux, or automation on a rooted device. Pro/Cloud features unlock with a license key.
+updateJson=https://raw.githubusercontent.com/K1LLLAGT/File-Forge/main/magisk-module/update.json

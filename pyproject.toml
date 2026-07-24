@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fileforge"
+version = "0.1.0"
+description = "FileForge — a multi-tier file-conversion toolkit (CLI free tier)."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "K1LLLAGT" }]
+keywords = ["file", "conversion", "cli", "pdf", "image", "ocr"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Environment :: Console",
+    "Topic :: Utilities",
+]
+dependencies = []
+
+[project.optional-dependencies]
+images = ["Pillow>=10.0"]
+pdf = ["pypdf>=4.0"]
+ocr = ["pytesseract>=0.3.10", "Pillow>=10.0"]
+tts = ["pyttsx3>=2.90"]
+yaml = ["PyYAML>=6.0"]
+markdown = ["markdown>=3.5"]
+cloud = ["fastapi>=0.110", "uvicorn>=0.29", "python-multipart>=0.0.9"]
+pro = ["Pillow>=10.0", "pypdf>=4.0", "pytesseract>=0.3.10", "pyttsx3>=2.90", "PyYAML>=6.0", "markdown>=3.5"]
+dev = ["pytest>=8.0", "pytest-cov>=5.0"]
+
+[project.scripts]
+fileforge = "fileforge.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/K1LLLAGT/File-Forge"
+Repository = "https://github.com/K1LLLAGT/File-Forge"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
