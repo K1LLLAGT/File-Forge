@@ -58,15 +58,25 @@ six-month execution roadmap.
 
 ## Licensing model (technical)
 
-Features gate on offline, HMAC-signed keys (`FF-<TIER>-<SUBJECT>-<SIG>`):
+Features gate on offline, **Ed25519-signed** keys (`FF2.<payload>.<signature>`).
+The server signs with a secret **private** key; clients verify **offline** with
+only the **public** key — no shared secret ships with the client, so keys can't
+be forged by inspecting the distributed binary. Verification is a vendored,
+dependency-free Ed25519 (works on Termux/Magisk/Android with zero installs).
 
 ```bash
+# One-time: generate a keypair and embed the public key in the client
+python scripts/keygen.py --write
+
+# Server side (or your purchase webhook) mints keys with the private key:
+export FILEFORGE_PRIVATE_KEY="<private from keygen>"
 export FILEFORGE_LICENSE="$(python scripts/issue_license.py --tier pro --subject demo)"
+
 fileforge batch ./images png jpg --recursive --workers 8   # Pro unlocked
 ```
 
-Without a key everything runs at the **Free** tier. Keys are minted from a
-purchase webhook (Gumroad/Payhip) in production.
+Without a valid key everything runs at the **Free** tier. Keys are minted from a
+purchase webhook (Gumroad/Payhip) in production — see `license-server/`.
 
 ## Run the Cloud API locally
 

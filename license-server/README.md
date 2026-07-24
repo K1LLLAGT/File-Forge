@@ -22,8 +22,12 @@ stores it, and emails it to the buyer.
 # Which product maps to which tier (Gumroad permalink / Payhip product id -> tier)
 export FF_PRODUCT_MAP="pro-desktop=pro,cloud-lifetime=cloud,enterprise=enterprise"
 
-# Signing salt — MUST match the CLI/engine (fileforge.licensing) in production
-export FILEFORGE_SALT="your-long-random-secret"
+# Ed25519 signing key (the SECRET private key). Generate with:
+#   python scripts/keygen.py
+export FILEFORGE_PRIVATE_KEY="<private key from keygen>"
+# The matching PUBLIC key is embedded in the client (or set FILEFORGE_PUBLIC_KEY
+# here too if this server also verifies keys via /license/{key}).
+export FILEFORGE_PUBLIC_KEY="<public key from keygen>"
 
 # Gumroad verification: prefer an API token; seller-id is the fallback
 export GUMROAD_ACCESS_TOKEN="..."      # or:
@@ -39,9 +43,10 @@ export FF_SMTP_HOST="smtp.example.com"   # optional; logs to stdout if unset
 export FF_SMTP_USER="..." FF_SMTP_PASS="..." FF_SMTP_FROM="sales@yourdomain"
 ```
 
-> **Important:** set the same `FILEFORGE_SALT` here and wherever keys are
-> validated. A server-issued key only verifies if both sides sign with the same
-> salt. Keep it secret and stable — changing it invalidates every issued key.
+> **Important:** the **private** key (`FILEFORGE_PRIVATE_KEY`) is your signing
+> secret — keep it only on the server, never commit it, never ship it to
+> clients. Clients need only the **public** key. Rotating the keypair
+> invalidates every previously issued key, so keep it stable.
 
 ## Run
 

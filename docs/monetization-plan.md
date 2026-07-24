@@ -346,11 +346,16 @@ route with a tier tag; the CLI, Desktop GUI, Android app, and Cloud API all
 call the same functions, so behaviour is identical everywhere and new formats
 ship to all tiers at once.
 
-**Tier gating.** `fileforge.licensing` validates offline, HMAC-signed license
-keys (`FF-<TIER>-<SUBJECT>-<SIG>`). Pro/Cloud/Enterprise entry points call
-`licensing.require(Tier.PRO)` before running, so one codebase ships to all
-tiers and unlocks by key. Keys are minted by `scripts/issue_license.py`, wired
-to Gumroad/Payhip purchase webhooks for auto-fulfillment.
+**Tier gating.** `fileforge.licensing` validates offline, **Ed25519-signed**
+license keys (`FF2.<payload>.<signature>`). The license server signs with a
+secret private key; clients verify with only the embedded public key, so no
+shared secret ships in the distributed binary and keys cannot be forged. The
+verifier is a vendored, dependency-free Ed25519 (pinned to the RFC 8032 test
+vector) so it runs on Termux/Magisk/Android with zero installs.
+Pro/Cloud/Enterprise entry points call `licensing.require(Tier.PRO)` before
+running, so one codebase ships to all tiers and unlocks by key. Keys are minted
+by `scripts/issue_license.py` (keypair via `scripts/keygen.py`), wired to
+Gumroad/Payhip purchase webhooks for auto-fulfillment.
 
 **Cloud API.** FastAPI app (`cloud-api/app`) exposing `POST /v1/convert`,
 `GET /v1/formats`, `GET /v1/usage`, `GET /healthz`. Auth via `X-API-Key`;

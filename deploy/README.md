@@ -53,7 +53,7 @@ docker run -p 8080:8080 -e SERVICE=cloud-api fileforge
 `cloud-api/app/main.py` with a real one for production.
 
 **License Server** — see `license-server/README.md`. At minimum set
-`FF_PRODUCT_MAP`, `FILEFORGE_SALT`, a provider verification secret
+`FF_PRODUCT_MAP`, `FILEFORGE_PRIVATE_KEY` (Ed25519 signing key), a provider verification secret
 (`GUMROAD_ACCESS_TOKEN`/`GUMROAD_SELLER_ID` or `PAYHIP_SECRET`), and
 `FF_ADMIN_TOKEN`. Use a persistent volume for `FF_LICENSE_DB`.
 

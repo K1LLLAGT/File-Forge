@@ -16,6 +16,12 @@ from fastapi.testclient import TestClient  # noqa: E402
 
 @pytest.fixture()
 def client(tmp_path, monkeypatch):
+    # A signing keypair for the server: private key signs, public key verifies.
+    sys.path.insert(0, str(ROOT / "src"))
+    from fileforge.licensing import generate_keypair
+    priv, pub = generate_keypair()
+    monkeypatch.setenv("FILEFORGE_PRIVATE_KEY", priv)
+    monkeypatch.setenv("FILEFORGE_PUBLIC_KEY", pub)
     monkeypatch.setenv("FF_LICENSE_DB", str(tmp_path / "lic.db"))
     monkeypatch.setenv("FF_PRODUCT_MAP", "pro-desktop=pro,cloud-lifetime=cloud")
     monkeypatch.setenv("GUMROAD_SELLER_ID", "seller-123")
@@ -42,7 +48,7 @@ def test_gumroad_sale_issues_pro_key(client):
     assert r.status_code == 200
     body = r.json()
     assert body["tier"] == "pro"
-    assert body["key"].startswith("FF-PRO-")
+    assert body["key"].startswith("FF2.")
 
     # The issued key verifies as Pro.
     v = client.get(f"/license/{body['key']}")
@@ -95,4 +101,4 @@ def test_admin_manual_issue(client):
                     data={"tier": "enterprise", "email": "e@corp.com", "sale_id": "M1"},
                     headers={"X-Admin-Token": "admin-secret"})
     assert r.json()["tier"] == "enterprise"
-    assert r.json()["key"].startswith("FF-ENTERPRISE-")
+    assert r.json()["key"].startswith("FF2.")
