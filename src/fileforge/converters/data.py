@@ -1,7 +1,8 @@
-"""Structured-data converters: JSON, CSV, TSV, YAML.
+"""Structured-data converters: JSON, CSV, TSV, YAML, XML, XLSX.
 
 All routes here are free-tier and depend only on the standard library,
-except YAML which uses PyYAML when it is installed.
+except YAML which uses PyYAML, XLSX which uses openpyxl, and XML which
+uses xmltodict (all optional).
 """
 
 from __future__ import annotations
@@ -26,6 +27,10 @@ def _read_tabular(rows, target: Path, delimiter: str) -> Path:
     target.write_text(buf.getvalue(), encoding="utf-8")
     return target
 
+
+# ============================================================================
+# JSON ↔ CSV / TSV
+# ============================================================================
 
 @registry.add("json", "csv", description="JSON array of objects -> CSV")
 def json_to_csv(source: Path, target: Path, **_) -> Path:
@@ -53,6 +58,18 @@ def csv_to_json(source: Path, target: Path, **_) -> Path:
     return Path(target)
 
 
+@registry.add("tsv", "json", description="TSV -> pretty JSON array")
+def tsv_to_json(source: Path, target: Path, **_) -> Path:
+    with Path(source).open(encoding="utf-8", newline="") as fh:
+        rows = list(csv.DictReader(fh, delimiter="\t"))
+    Path(target).write_text(json.dumps(rows, indent=2), encoding="utf-8")
+    return Path(target)
+
+
+# ============================================================================
+# CSV ↔ TSV
+# ============================================================================
+
 @registry.add("csv", "tsv", description="CSV -> TSV")
 def csv_to_tsv(source: Path, target: Path, **_) -> Path:
     with Path(source).open(encoding="utf-8", newline="") as fh:
@@ -62,6 +79,20 @@ def csv_to_tsv(source: Path, target: Path, **_) -> Path:
     Path(target).write_text(buf.getvalue(), encoding="utf-8")
     return Path(target)
 
+
+@registry.add("tsv", "csv", description="TSV -> CSV")
+def tsv_to_csv(source: Path, target: Path, **_) -> Path:
+    with Path(source).open(encoding="utf-8", newline="") as fh:
+        rows = list(csv.reader(fh, delimiter="\t"))
+    buf = io.StringIO()
+    csv.writer(buf).writerows(rows)
+    Path(target).write_text(buf.getvalue(), encoding="utf-8")
+    return Path(target)
+
+
+# ============================================================================
+# JSON ↔ YAML
+# ============================================================================
 
 @registry.add("json", "yaml", description="JSON -> YAML", requires=["yaml"])
 def json_to_yaml(source: Path, target: Path, **_) -> Path:
@@ -80,4 +111,144 @@ def yaml_to_json(source: Path, target: Path, **_) -> Path:
 
     data = yaml.safe_load(Path(source).read_text(encoding="utf-8"))
     Path(target).write_text(json.dumps(data, indent=2), encoding="utf-8")
+    return Path(target)
+
+
+# ============================================================================
+# JSON ↔ XML
+# ============================================================================
+
+@registry.add("json", "xml", description="JSON -> XML", requires=["xmltodict"])
+def json_to_xml(source: Path, target: Path, **_) -> Path:
+    import xmltodict  # optional dependency
+
+    data = json.loads(Path(source).read_text(encoding="utf-8"))
+    if isinstance(data, list):
+        # Wrap array in a root element
+        data = {"root": {"item": data}}
+    xml_str = xmltodict.unparse(data, pretty=True)
+    Path(target).write_text(xml_str, encoding="utf-8")
+    return Path(target)
+
+
+@registry.add("xml", "json", description="XML -> pretty JSON", requires=["xmltodict"])
+def xml_to_json(source: Path, target: Path, **_) -> Path:
+    import xmltodict  # optional dependency
+
+    xml_str = Path(source).read_text(encoding="utf-8")
+    data = xmltodict.parse(xml_str)
+    Path(target).write_text(json.dumps(data, indent=2), encoding="utf-8")
+    return Path(target)
+
+
+# ============================================================================
+# CSV ↔ XLSX / JSON ↔ XLSX
+# ============================================================================
+
+@registry.add("csv", "xlsx", description="CSV -> XLSX (Excel)", requires=["openpyxl"])
+def csv_to_xlsx(source: Path, target: Path, **_) -> Path:
+    from openpyxl import Workbook  # optional dependency
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Sheet1"
+    
+    with Path(source).open(encoding="utf-8", newline="") as fh:
+        reader = csv.reader(fh)
+        for row in reader:
+            ws.append(row)
+    
+    wb.save(str(target))
+    return Path(target)
+
+
+@registry.add("xlsx", "csv", description="XLSX (Excel) -> CSV", requires=["openpyxl"])
+def xlsx_to_csv(source: Path, target: Path, **_) -> Path:
+    from openpyxl import load_workbook  # optional dependency
+
+    wb = load_workbook(str(source))
+    ws = wb.active
+    
+    with Path(target).open("w", encoding="utf-8", newline="") as fh:
+        writer = csv.writer(fh)
+        for row in ws.iter_rows(values_only=True):
+            writer.writerow(row)
+    
+    return Path(target)
+
+
+@registry.add("json", "xlsx", description="JSON array of objects -> XLSX", requires=["openpyxl"])
+def json_to_xlsx(source: Path, target: Path, **_) -> Path:
+    from openpyxl import Workbook  # optional dependency
+
+    data = json.loads(Path(source).read_text(encoding="utf-8"))
+    if isinstance(data, dict):
+        data = [data]
+    if not isinstance(data, list):
+        raise ConversionError("JSON must be an object or array of objects")
+    
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Sheet1"
+    
+    if data:
+        # Write headers
+        fieldnames = list(data[0].keys())
+        ws.append(fieldnames)
+        # Write rows
+        for row in data:
+            ws.append([row.get(k, "") for k in fieldnames])
+    
+    wb.save(str(target))
+    return Path(target)
+
+
+@registry.add("xlsx", "json", description="XLSX (Excel) -> pretty JSON", requires=["openpyxl"])
+def xlsx_to_json(source: Path, target: Path, **_) -> Path:
+    from openpyxl import load_workbook  # optional dependency
+
+    wb = load_workbook(str(source))
+    ws = wb.active
+    
+    rows = list(ws.iter_rows(values_only=True))
+    if not rows:
+        Path(target).write_text("[]", encoding="utf-8")
+        return Path(target)
+    
+    headers = rows[0]
+    data = [dict(zip(headers, row)) for row in rows[1:]]
+    
+    Path(target).write_text(json.dumps(data, indent=2), encoding="utf-8")
+    return Path(target)
+
+
+@registry.add("tsv", "xlsx", description="TSV -> XLSX (Excel)", requires=["openpyxl"])
+def tsv_to_xlsx(source: Path, target: Path, **_) -> Path:
+    from openpyxl import Workbook  # optional dependency
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Sheet1"
+    
+    with Path(source).open(encoding="utf-8", newline="") as fh:
+        reader = csv.reader(fh, delimiter="\t")
+        for row in reader:
+            ws.append(row)
+    
+    wb.save(str(target))
+    return Path(target)
+
+
+@registry.add("xlsx", "tsv", description="XLSX (Excel) -> TSV", requires=["openpyxl"])
+def xlsx_to_tsv(source: Path, target: Path, **_) -> Path:
+    from openpyxl import load_workbook  # optional dependency
+
+    wb = load_workbook(str(source))
+    ws = wb.active
+    
+    with Path(target).open("w", encoding="utf-8", newline="") as fh:
+        writer = csv.writer(fh, delimiter="\t")
+        for row in ws.iter_rows(values_only=True):
+            writer.writerow(row)
+    
     return Path(target)
