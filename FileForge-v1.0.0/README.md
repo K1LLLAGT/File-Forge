@@ -6,7 +6,6 @@ a free CLI, a Pro desktop/Android build, a Cloud API, and Enterprise licensing.
 ![status](https://img.shields.io/badge/status-active-brightgreen)
 ![python](https://img.shields.io/badge/python-3.9%2B-blue)
 ![license](https://img.shields.io/badge/license-MIT%20(core)-green)
-![PyPI](https://img.shields.io/pypi/v/pyfile-convert)
 
 > The free CLI is fully functional and MIT-licensed. Pro / Cloud / Enterprise
 > features unlock over the **same engine** with a license key.
@@ -52,6 +51,9 @@ pip install -e '.[cloud]'    # run the Cloud API locally
 | **Pro**        | Advanced features, GUI, automation, cloud    |
 | **Enterprise** | Licensing, API access, support, custom builds|
 
+See **[docs/monetization-plan.md](docs/monetization-plan.md)** for the complete
+pricing, feature matrix, distribution, marketing, revenue projections, and
+six-month execution roadmap.
 
 ## Everything is free
 
