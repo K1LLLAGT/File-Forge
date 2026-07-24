@@ -1,46 +1,74 @@
-# FileForge Android GUI (Monetization Strategy #2)
+# FileForge Android
 
-A thin native GUI over the FileForge engine. The heavy lifting stays in the
-shared conversion engine; the app is a **file picker → format selector →
-progress → share** shell, plus paid upsells (cloud conversion, OCR, batch,
-unlimited).
+A small Compose app that runs the **real FileForge engine on-device** via
+[Chaquopy](https://chaquo.com/chaquopy/) (embedded CPython). It installs the
+published `pyfile-convert` package at build time, so the app and the CLI share
+exactly the same conversion code. FileForge is free — no license, no upsells.
 
-## Architecture
+## What it does
+
+**Pick a file → choose an output format → convert → share.** The Kotlin UI is
+deliberately thin; all conversion logic lives in Python (`ffbridge.py`, which
+calls `fileforge`), so new formats added to the engine appear in the app with
+no Kotlin changes.
 
 ```
-┌─────────────────────────────────────────────┐
-│  MainActivity (Compose UI)                    │
-│  • Storage Access Framework file picker       │
-│  • Format dropdown (from /v1/formats or local)│
-│  • Progress bar + background WorkManager job   │
-└───────────────┬───────────────────────────────┘
-                │
-        ┌───────▼─────────┐        ┌──────────────────────┐
-        │ LocalEngine      │        │ CloudClient          │
-        │ (Chaquopy Python │        │ Retrofit -> Cloud API │
-        │  runs fileforge) │        │  (Pro/Cloud upsell)   │
-        └──────────────────┘        └──────────────────────┘
+MainActivity.kt ──callAttr──> ffbridge.py ──> fileforge.core.registry
+   (Compose UI)                (bridge)          (shared engine)
 ```
 
-- **On-device conversions** run the same Python `fileforge` package via
-  [Chaquopy](https://chaquo.com/chaquopy/) (embeds CPython in the APK).
-- **Cloud conversions / OCR / large video** call the FileForge Cloud API and
-  are the primary in-app-purchase upsell.
+## Project layout
 
-## Monetization hooks
-
-| Surface                | Free            | Pro (IAP / paid app)          |
-|------------------------|-----------------|-------------------------------|
-| Single-file convert    | ✅              | ✅                            |
-| Batch / folder convert | ❌ (upsell)     | ✅                            |
-| Cloud fallback + OCR    | ❌ (upsell)     | ✅ (uses Cloud API key)       |
-| Ads                    | optional banner | removed                       |
-
-Pricing (per spec): **$2.99–$9.99** on Google Play, **$4.99** on Amazon
-Appstore, **$9.99** Pro. Upsells: cloud conversion, OCR, batch mode,
-unlimited conversions.
+```
+android/
+├── settings.gradle.kts
+├── build.gradle.kts                 # plugin versions (AGP, Kotlin, Chaquopy)
+├── gradle.properties
+└── app/
+    ├── build.gradle.kts             # Chaquopy pip { install("pyfile-convert") }
+    └── src/main/
+        ├── AndroidManifest.xml
+        ├── java/com/k1lllagt/fileforge/MainActivity.kt
+        ├── python/ffbridge.py       # Kotlin <-> engine bridge
+        └── res/…                    # strings, theme, FileProvider paths
+```
 
 ## Build
 
-Standard Gradle + Chaquopy. `app/src/main/python/` symlinks or copies
-`../../src/fileforge`. See `app/MainActivity.kt` for the entry-point skeleton.
+**Requirements:** Android Studio (Hedgehog+), JDK 17, Android SDK 34.
+
+Chaquopy also needs a desktop Python **3.8–3.12** available for the build
+(it uses it to resolve/download the requirements). Point it at yours if it
+isn't auto-detected, e.g. in `app/build.gradle.kts`:
+
+```kotlin
+// android { defaultConfig { python { buildPython("/usr/bin/python3.12") } } }
+```
+
+Then:
+
+```bash
+# Open the android/ folder in Android Studio and let it sync + generate the
+# Gradle wrapper, OR from a machine with Gradle installed:
+cd android
+gradle wrapper            # one-time: creates ./gradlew and the wrapper jar
+./gradlew assembleDebug   # builds app/build/outputs/apk/debug/app-debug.apk
+```
+
+Install on a device:
+
+```bash
+./gradlew installDebug
+# or: adb install app/build/outputs/apk/debug/app-debug.apk
+```
+
+## Notes
+
+- **First build is slow** — Chaquopy downloads CPython + the requirements for
+  each ABI. Subsequent builds are cached.
+- **ABIs:** `arm64-v8a` (modern phones), `armeabi-v7a` (older), `x86_64`
+  (emulator). Trim the list in `build.gradle.kts` to shrink the APK.
+- **Images:** Pillow is installed for image conversions. Drop it from the
+  `pip { }` block if you only need text/data/PDF routes.
+- **No signing config** is included — `assembleDebug` produces a debug-signed
+  APK. Add a `signingConfig` for Play Store release builds.

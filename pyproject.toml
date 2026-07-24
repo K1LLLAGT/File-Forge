@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyfile-convert"
-version = "0.1.0"
-description = "FileForge — a multi-tier file-conversion toolkit (CLI free tier)."
+version = "0.1.1"
+description = "FileForge — a free, batteries-included file-conversion toolkit (CLI)."
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }

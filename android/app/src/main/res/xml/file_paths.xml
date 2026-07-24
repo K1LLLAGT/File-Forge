@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Exposes the app cache dir (where conversions are written) to the
+         FileProvider so results can be shared. -->
+    <cache-path name="conversions" path="." />
+    <files-path name="files" path="." />
+</paths>

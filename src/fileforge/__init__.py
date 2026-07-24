@@ -1,10 +1,10 @@
-"""FileForge — a multi-tier file-conversion toolkit.
+"""FileForge — a free, batteries-included file-conversion toolkit.
 
-The free tier ships a fully functional CLI built on the Python standard
-library (plus optional accelerators such as Pillow when present). Pro,
-Cloud, and Enterprise capabilities are layered on top of the same core
-conversion registry so every tier shares one engine.
+Ships a fully functional CLI built on the Python standard library (plus
+optional accelerators such as Pillow when present). Every feature — batch,
+parallel, OCR, PDF, video presets, TTS — is free; the tiering/licensing code
+remains in the tree but dormant.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __all__ = ["__version__"]
