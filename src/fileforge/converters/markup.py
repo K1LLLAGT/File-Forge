@@ -1,7 +1,8 @@
-"""HTML to Markdown converter.
+"""HTML and Markdown converters.
 
 Converts HTML back to Markdown format for easy editing and portability.
 Handles common HTML tags (headings, paragraphs, links, lists, bold/italic).
+Also handles Markdown -> text and other markup transformations.
 """
 
 from __future__ import annotations
@@ -36,7 +37,7 @@ def _html_to_markdown(html: str) -> str:
     text = re.sub(r"<br\s*\/?>", "\n", text, flags=re.IGNORECASE)
     
     # Links: <a href="url">text</a> -> [text](url)
-    text = re.sub(r'<a\s+href=["\'](.*?)["\'][^>]*>(.*?)<\/a>', r"[\2](\1)", text, flags=re.IGNORECASE | re.DOTALL)
+    text = re.sub(r'<a\s+href=["\']([\w\W]*?)["\'][^>]*>([\w\W]*?)<\/a>', r"[\2](\1)", text, flags=re.IGNORECASE | re.DOTALL)
     
     # Bold: <strong>text</strong> or <b>text</b> -> **text**
     text = re.sub(r"<strong[^>]*>(.*?)<\/strong>", r"**\1**", text, flags=re.IGNORECASE | re.DOTALL)
@@ -68,9 +69,58 @@ def _html_to_markdown(html: str) -> str:
     return text.strip() + "\n"
 
 
+def _markdown_to_text(md: str) -> str:
+    """Strip Markdown syntax to plain text."""
+    text = md
+    
+    # Remove code blocks: ```...```
+    text = re.sub(r"```[\s\S]*?```", "", text)
+    
+    # Remove inline code: `code` -> code
+    text = re.sub(r"`([^`]+)`", r"\1", text)
+    
+    # Remove bold: **text** or __text__ -> text
+    text = re.sub(r"\*\*([^*]+)\*\*", r"\1", text)
+    text = re.sub(r"__([^_]+)__", r"\1", text)
+    
+    # Remove italic: *text* or _text_ -> text
+    text = re.sub(r"\*([^*]+)\*", r"\1", text)
+    text = re.sub(r"_([^_]+)_", r"\1", text)
+    
+    # Remove links: [text](url) -> text
+    text = re.sub(r"\[([^\]]+)\]\([^\)]+\)", r"\1", text)
+    
+    # Remove headings: # heading -> heading
+    text = re.sub(r"^#+\s+", "", text, flags=re.MULTILINE)
+    
+    # Remove list markers: - item or * item or + item -> item
+    text = re.sub(r"^[-*+]\s+", "", text, flags=re.MULTILINE)
+    
+    # Remove numbered lists: 1. item -> item
+    text = re.sub(r"^\d+\.\s+", "", text, flags=re.MULTILINE)
+    
+    # Clean up excessive whitespace
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    
+    return text.strip() + "\n"
+
+
 @registry.add("html", "md", description="HTML document -> Markdown")
 def html_to_md(source: Path, target: Path, **_) -> Path:
     html = Path(source).read_text(encoding="utf-8")
     markdown = _html_to_markdown(html)
     Path(target).write_text(markdown, encoding="utf-8")
     return Path(target)
+
+
+@registry.add("md", "txt", description="Markdown -> plain text (strip syntax)")
+def md_to_txt(source: Path, target: Path, **_) -> Path:
+    md = Path(source).read_text(encoding="utf-8")
+    text = _markdown_to_text(md)
+    Path(target).write_text(text, encoding="utf-8")
+    return Path(target)
+
+
+@registry.add("markdown", "txt", description="Markdown -> plain text (strip syntax)")
+def markdown_to_txt(source: Path, target: Path, **_) -> Path:
+    return md_to_txt(source, target)
