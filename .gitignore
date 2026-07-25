@@ -24,3 +24,11 @@ htmlcov/
 *.license
 *.db
 scratch/
+
+# Locally-built Chaquopy wheels (CI regenerates)
+android2/app/wheels/
+
+# PyInstaller build output
+windows/build/
+windows/dist/
+*.spec.bak

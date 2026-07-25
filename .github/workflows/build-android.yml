@@ -1,0 +1,67 @@
+name: build-android-apk
+
+# Builds the re-branded FileForge 2.0 Android APK (com.fileforge2.app) with
+# Chaquopy, embedding a locally-built wheel of this repo so the on-device engine
+# includes the 2.0 suggestion layer. Uploads the debug APK as an artifact.
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "android2/**"
+      - "src/fileforge/**"
+      - "pyproject.toml"
+      - ".github/workflows/build-android.yml"
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Python (for building the engine wheel)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build local FileForge engine wheel (includes 2.0 layer)
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build --wheel --outdir android2/app/wheels .
+          ls -l android2/app/wheels
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install SDK packages
+        run: |
+          sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+
+      - name: Generate Gradle wrapper (8.5)
+        working-directory: android2
+        run: gradle wrapper --gradle-version 8.5 --no-daemon
+
+      - name: Build debug APK
+        working-directory: android2
+        run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
+
+      - name: Locate APK
+        id: apk
+        run: |
+          apk=$(find android2/app/build/outputs/apk -name "*.apk" | head -1)
+          echo "path=$apk" >> "$GITHUB_OUTPUT"
+          echo "Built: $apk"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: FileForge2-android-apk
+          path: android2/app/build/outputs/apk/**/*.apk
+          if-no-files-found: error

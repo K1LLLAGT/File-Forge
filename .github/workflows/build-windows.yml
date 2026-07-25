@@ -1,0 +1,50 @@
+name: build-windows-exe
+
+# Builds the real FileForge.exe on a Windows runner (PyInstaller cannot
+# cross-compile from Linux) and uploads it as a downloadable artifact.
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "windows/**"
+      - "src/fileforge/**"
+      - ".github/workflows/build-windows.yml"
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install engine + build deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[images,pdf]"
+          python -m pip install pyinstaller
+
+      - name: Build FileForge.exe
+        working-directory: windows
+        run: pyinstaller --noconfirm --clean fileforge.spec
+
+      - name: Sanity-check the exe exists
+        working-directory: windows
+        shell: pwsh
+        run: |
+          if (-not (Test-Path dist/FileForge.exe)) {
+            Write-Error "FileForge.exe was not produced"
+            exit 1
+          }
+          Get-Item dist/FileForge.exe | Format-List Name, Length
+
+      - name: Upload FileForge.exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: FileForge-windows-exe
+          path: windows/dist/FileForge.exe
+          if-no-files-found: error

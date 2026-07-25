@@ -23,11 +23,22 @@ android {
         }
 
         // Chaquopy: embed CPython + the FileForge engine (incl. the 2.0
-        // discovery/suggestion layer, which is pure-Python) straight from PyPI.
+        // discovery/suggestion layer, which is pure-Python).
+        //
+        // The published PyPI ``pyfile-convert`` does not yet ship the 2.0
+        // suggestion layer that ``ffbridge.ranked_targets`` / ``suggest_dir``
+        // rely on, so we prefer a locally-built wheel of *this* repo when one is
+        // present (CI builds it into ``app/wheels/`` via ``pip wheel .``), and
+        // fall back to PyPI otherwise.
         python {
             pip {
-                install("pyfile-convert")   // FileForge CLI/engine + 2.0 layer
                 install("Pillow")           // image conversions on-device
+                val wheel = fileTree("wheels") { include("*.whl") }.files.firstOrNull()
+                if (wheel != null) {
+                    install(wheel.absolutePath)   // local engine + 2.0 layer
+                } else {
+                    install("pyfile-convert")     // fallback (may lack 2.0 layer)
+                }
             }
         }
     }
