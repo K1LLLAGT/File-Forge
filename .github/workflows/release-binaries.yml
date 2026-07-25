@@ -106,13 +106,29 @@ jobs:
           draft: ${{ inputs.draft == 'true' }}
           fail_on_unmatched_files: true
           body: |
-            FileForge ${{ inputs.tag }} desktop + Android apps, built on the FileForge 2.0 discovery/suggestion engine.
+            FileForge ${{ inputs.tag }} — desktop + Android apps, built on the FileForge 2.0 discovery/suggestion engine.
 
             ## Downloads
             - **FileForge-${{ inputs.tag }}.exe** — Windows 11 desktop app (directory browser, ranked conversion suggestions, progress, history). Built with PyInstaller.
             - **FileForge2-${{ inputs.tag }}-debug.apk** — re-branded Android app (`com.fileforge2.app`). This is a **debug** build (unsigned); enable "install from unknown sources" to sideload.
 
             Both bundle the shared conversion engine (converters registry + the 2.0 suggestion layer).
+
+            ## Highlights
+            **Discovery & suggestion layer (new)**
+            - `fileforge-discover` — normalize FileForge aliases and enumerate instances on disk.
+            - `fileforge-suggest` — scan a directory, suggest conversions (real engine routes + generics), emit `run_conversions.sh` / `.ps1`.
+            - `fileforge-cli` — unified report: alias resolution + conversion matrix + recommendations.
+
+            **Apps**
+            - Windows `FileForge.exe`: folder browser, file-type summary, ranked suggestion panel, threaded conversion with progress, history tab.
+            - Android `com.fileforge2.app`: Compose Convert + History tabs, suggestion-ranked target picker, persisted history. (Retires the original `com.k1lllagt.fileforge` app.)
+
+            **Tooling**
+            - `bootstrap.sh` + `setup/` scripts (OS detection + subsystem verification).
+            - CI builds both binaries on their native toolchains (PyInstaller on Windows; JDK 17 + Android SDK 34 + Chaquopy on Linux) and attaches them here.
+
+            See [CHANGELOG.md](https://github.com/K1LLLAGT/File-Forge/blob/main/CHANGELOG.md) for full details.
           files: |
             dist/*.exe
             dist/*.apk
