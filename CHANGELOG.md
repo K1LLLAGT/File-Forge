@@ -2,15 +2,28 @@
 
 ## Unreleased
 
+- **Chained conversions** — when there's no direct converter, the engine now
+  finds a route through intermediate formats (e.g. `md → txt → pdf`,
+  `csv → md → txt → pdf`) and runs it automatically. Added
+  `Registry.find_path()`; the CLI falls back to it and prints the path taken.
 - Added a `fileforge doctor` command — reports which optional packages
   (Pillow, pypdf, ffmpeg, …) are installed and lists exactly which conversion
   routes are usable right now (`--list` for the full per-route breakdown).
 - Added converters:
   - Images (Pillow): `jpg→webp`, `jpeg→webp`, `webp→jpg`, `bmp→jpg`,
-    `gif→png`, `tiff→png`, `heic→png`, `png→ico`.
+    `gif→png`, `tiff→png`, `heic→png`, `png→ico`, and image → PDF
+    (`png/jpg/jpeg/bmp/gif/tiff/webp → pdf`).
   - Audio (ffmpeg): `wav↔mp3`, `flac→mp3`/`wav`, `wav→flac`, `m4a→mp3`,
     `ogg→mp3`, `mp3→ogg`.
+  - Dev/data (pure-Python): `json↔jsonl`, `csv/tsv/json → md` (Markdown
+    tables), `csv/json → html` (HTML tables), `ini↔json`, `ini↔toml`,
+    `.env↔json`, `har→csv`, `gpx→geojson`, `kml→geojson`.
+  - Subtitles (pure-Python): `srt↔vtt`.
+  - Graphics: `png/jpg → b64` (data URI), `png→txt` (ASCII art), and the
+    dependency-gated `txt→png` (QR code, needs `qrcode`), `svg→png`
+    (`cairosvg`), `pdf→png` (`pymupdf`).
   - `pdf→txt` — extract a PDF's embedded text (pypdf).
+- New optional extras: `qr`, `svg`, `render`.
 
 ## v2.0.0 — Discovery/Suggestion layer, desktop & Android apps
 
