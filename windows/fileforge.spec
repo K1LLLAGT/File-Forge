@@ -10,8 +10,13 @@ them. We therefore collect every ``fileforge`` submodule explicitly.
 
 from PyInstaller.utils.hooks import collect_submodules
 
-# Pull in fileforge.converters.* (registered lazily) and the 2.0 layer modules.
-hiddenimports = collect_submodules("fileforge")
+# The converters register themselves lazily via pkgutil, so PyInstaller's
+# static analysis can't see them — collect them explicitly. Everything else the
+# app uses (core.registry, suggestions) is imported statically and picked up by
+# normal analysis, so we deliberately scope this to the converters package
+# rather than all of ``fileforge`` (which would also drag in optional,
+# unrelated modules like licensing).
+hiddenimports = collect_submodules("fileforge.converters")
 
 block_cipher = None
 
