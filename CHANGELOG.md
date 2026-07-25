@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- Added a `fileforge doctor` command — reports which optional packages
+  (Pillow, pypdf, ffmpeg, …) are installed and lists exactly which conversion
+  routes are usable right now (`--list` for the full per-route breakdown).
+- Added converters:
+  - Images (Pillow): `jpg→webp`, `jpeg→webp`, `webp→jpg`, `bmp→jpg`,
+    `gif→png`, `tiff→png`, `heic→png`, `png→ico`.
+  - Audio (ffmpeg): `wav↔mp3`, `flac→mp3`/`wav`, `wav→flac`, `m4a→mp3`,
+    `ogg→mp3`, `mp3→ogg`.
+  - `pdf→txt` — extract a PDF's embedded text (pypdf).
+
 ## v2.0.0 — Discovery/Suggestion layer, desktop & Android apps
 
 ### Discovery & suggestion layer (new)

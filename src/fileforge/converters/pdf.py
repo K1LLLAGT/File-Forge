@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List, Sequence
 
-from fileforge.core.registry import ConversionError
+from fileforge.core.registry import ConversionError, registry
 from fileforge.licensing import License, Tier, require
 
 
@@ -47,3 +47,27 @@ def split_pdf(source: Path, out_dir: Path, *, license: License | None = None) ->
             writer.write(fh)
         outputs.append(dst)
     return outputs
+
+
+def extract_text(source: Path, target: Path, **options) -> Path:
+    """Extract a PDF's embedded text into a plain-text file (one blank line
+    between pages). Works on text-based PDFs; scanned/image PDFs yield little
+    or nothing — use the OCR path for those."""
+    pypdf = _pypdf()
+    reader = pypdf.PdfReader(str(source))
+    pages = [(page.extract_text() or "").rstrip() for page in reader.pages]
+    Path(target).write_text("\n\n".join(pages) + "\n", encoding="utf-8")
+    return Path(target)
+
+
+def _register_routes() -> None:
+    # Text extraction is a free, everyday operation; merge/split stay in the
+    # Pro-tagged (dormant) functions above.
+    registry.add(
+        "pdf", "txt",
+        description="PDF -> extracted plain text (pypdf)",
+        requires=["pypdf"],
+    )(extract_text)
+
+
+_register_routes()

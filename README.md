@@ -17,11 +17,19 @@ a free CLI, a Pro desktop/Android build, a Cloud API, and Enterprise licensing.
 
 ```bash
 pip install -e .            # or: pip install pyfile-convert  (once published; import/command stay `fileforge`)
-fileforge list             # show conversions available to your tier
+fileforge list             # show all conversions
+fileforge doctor           # what's installed + which conversions are ready
 fileforge convert notes.md notes.html
 fileforge convert data.json data.csv
 fileforge convert report.txt report.pdf     # pure-Python PDF, no deps
+fileforge convert photo.png photo.webp       # images (Pillow)
+fileforge convert track.wav track.mp3        # audio (ffmpeg)
+fileforge convert paper.pdf paper.txt        # extract text (pypdf)
 ```
+
+`fileforge doctor` reports which optional packages (Pillow, pypdf, ffmpeg, …)
+are present and lists exactly which routes are usable right now — run it with
+`--list` for the full per-route breakdown.
 
 Optional accelerators:
 
