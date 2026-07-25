@@ -32,6 +32,20 @@ pip install -e '.[ocr]'      # Tesseract OCR (Pro)
 pip install -e '.[cloud]'    # run the Cloud API locally
 ```
 
+## Download the apps
+
+Prebuilt binaries are attached to the latest release
+([**releases/latest**](https://github.com/K1LLLAGT/File-Forge/releases/latest)):
+
+| Platform | Download | Notes |
+|----------|----------|-------|
+| **Windows 11** | [FileForge.exe](https://github.com/K1LLLAGT/File-Forge/releases/download/v2.0.0/FileForge-v2.0.0.exe) | Standalone desktop app (folder browser, ranked suggestions, progress, history). No Python required. |
+| **Android** | [FileForge2 APK](https://github.com/K1LLLAGT/File-Forge/releases/download/v2.0.0/FileForge2-v2.0.0-debug.apk) | `com.fileforge2.app`. **Debug** build (unsigned) — enable "install from unknown sources" to sideload. |
+
+Both are built in CI on their native toolchains and bundle the same conversion
+engine as the CLI. See the [v2.0.0 release notes](https://github.com/K1LLLAGT/File-Forge/releases/tag/v2.0.0)
+for the full changelog.
+
 ## What's in the box
 
 | Path                | Tier / Strategy                    | What it is                                   |
