@@ -1,0 +1,40 @@
+name: cleanup-releases
+
+# One-shot maintenance: delete specific GitHub Releases while KEEPING their git
+# tags (gh release delete without --cleanup-tag leaves the tag in place).
+# Manual only. Pass the exact tags to delete; nothing runs on its own.
+on:
+  workflow_dispatch:
+    inputs:
+      tags:
+        description: "Comma-separated release tags to delete (git tags are kept)"
+        required: true
+        default: "v1.0.0,v0.1.1,v0.1.0"
+
+permissions:
+  contents: write   # required to delete releases
+
+jobs:
+  delete:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete releases (keep git tags)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TAGS: ${{ inputs.tags }}
+        run: |
+          set -euo pipefail
+          IFS=',' read -ra LIST <<< "$TAGS"
+          for raw in "${LIST[@]}"; do
+            tag="$(echo "$raw" | xargs)"   # trim whitespace
+            [ -n "$tag" ] || continue
+            if gh release view "$tag" --repo "$REPO" >/dev/null 2>&1; then
+              echo "Deleting release '$tag' (keeping git tag)"
+              gh release delete "$tag" --repo "$REPO" --yes
+            else
+              echo "No release found for '$tag' — skipping"
+            fi
+          done
+          echo "Remaining releases:"
+          gh release list --repo "$REPO"
