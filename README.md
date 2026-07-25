@@ -40,7 +40,9 @@ pip install -e '.[cloud]'    # run the Cloud API locally
 | `src/fileforge/pro/`| Pro (batch, OCR, PDF, TTS)         | License-gated advanced features              |
 | `cloud-api/`        | Strategy 3 & 7 — Cloud API         | FastAPI convert/formats/usage + metering     |
 | `desktop/`          | Strategy 6 — Desktop GUI           | Tkinter reference GUI (PyQt/Electron in Pro) |
+| `windows/`          | FileForge 2.0 — Windows app        | PyInstaller `FileForge.exe` (browser + suggestions + history) |
 | `android/`          | Strategy 2 — Android GUI           | Compose + Chaquopy architecture & skeleton   |
+| `android2/`         | FileForge 2.0 — re-branded Android | `com.fileforge2.app` (ranked targets + history) |
 | `magisk-module/`    | Strategy 9 — Magisk module         | Flashable system-wide install                |
 | `scripts/`          | Fulfillment / packaging            | License issuing, Magisk zip builder          |
 
@@ -60,6 +62,11 @@ fileforge-cli --dir . --discover   # unified report: aliases + matrix + recommen
 Docs: [DISCOVERY.md](DISCOVERY.md), [CONVERSIONS.md](CONVERSIONS.md),
 [USER_FLOW.md](USER_FLOW.md). One-shot setup: `./bootstrap.sh`
 ([BOOTSTRAP.md](BOOTSTRAP.md)).
+
+Two apps are built on this layer: a Windows desktop app packaged as
+`FileForge.exe` ([windows/](windows/), [WINDOWS_SETUP.md](windows/WINDOWS_SETUP.md))
+and a re-branded Android build `com.fileforge2.app`
+([android2/](android2/), [ANDROID_SETUP.md](android2/ANDROID_SETUP.md)).
 
 ## Tiers
 
