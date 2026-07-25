@@ -30,6 +30,14 @@ _IMAGE_ROUTES = [
     ("tiff", "png"),
     ("heic", "png"),
     ("png", "ico"),
+    # --- image -> single-page PDF (Pillow) ---
+    ("png", "pdf"),
+    ("jpg", "pdf"),
+    ("jpeg", "pdf"),
+    ("bmp", "pdf"),
+    ("gif", "pdf"),
+    ("tiff", "pdf"),
+    ("webp", "pdf"),
 ]
 
 
@@ -43,11 +51,14 @@ def _convert_image(source: Path, target: Path, **options) -> Path:
 
     img = Image.open(source)
     target_ext = target.suffix.lower().lstrip(".")
-    if target_ext in {"jpg", "jpeg", "bmp"} and img.mode in {"RGBA", "P", "LA"}:
+    # JPEG/BMP/PDF have no alpha channel — flatten to RGB first.
+    if target_ext in {"jpg", "jpeg", "bmp", "pdf"} and img.mode in {"RGBA", "P", "LA"}:
         img = img.convert("RGB")
     save_kwargs = {}
     if target_ext in {"jpg", "jpeg"}:
         save_kwargs["quality"] = int(options.get("quality", 90))
+    if target_ext == "pdf":
+        save_kwargs["format"] = "PDF"
     img.save(target, **save_kwargs)
     return target
 

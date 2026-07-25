@@ -91,8 +91,9 @@ def test_suggest_returns_supported_and_generic(sample_dir):
     # Engine-supported route exists and is flagged supported.
     assert routes[("png", "jpg")].supported is True
     assert routes[("csv", "json")].supported is True
-    # A generic route with no engine converter is flagged unsupported.
-    assert routes[("png", "pdf")].supported is False
+    # A generic route with no engine converter is flagged unsupported
+    # (mp4 -> webm is a common suggestion but not a registered converter).
+    assert routes[("mp4", "webm")].supported is False
     # Supported routes are ranked ahead of generic ones.
     first_generic = next(i for i, s in enumerate(sugg) if not s.supported)
     last_supported = max(i for i, s in enumerate(sugg) if s.supported)

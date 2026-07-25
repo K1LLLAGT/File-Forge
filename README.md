@@ -25,7 +25,15 @@ fileforge convert report.txt report.pdf     # pure-Python PDF, no deps
 fileforge convert photo.png photo.webp       # images (Pillow)
 fileforge convert track.wav track.mp3        # audio (ffmpeg)
 fileforge convert paper.pdf paper.txt        # extract text (pypdf)
+fileforge convert data.csv data.md           # Markdown table
+fileforge convert config.ini config.json     # config formats
+fileforge convert subs.srt subs.vtt          # subtitles
+fileforge convert notes.md notes.pdf         # chained: md -> txt -> pdf
 ```
+
+**Chained conversions:** when no direct converter exists, FileForge routes
+through intermediate formats automatically (e.g. `md → txt → pdf`) and prints
+the path it took.
 
 `fileforge doctor` reports which optional packages (Pillow, pypdf, ffmpeg, …)
 are present and lists exactly which routes are usable right now — run it with

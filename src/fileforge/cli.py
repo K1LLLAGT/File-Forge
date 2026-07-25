@@ -31,6 +31,42 @@ def _format_file_size(bytes_: int) -> str:
     return f"{bytes_:.1f}TB"
 
 
+def _run_chain(source, target, src_ext, tgt_ext, chain) -> int:
+    """Execute a multi-step conversion chain through temporary intermediates."""
+    import os
+    import tempfile
+
+    steps = " -> ".join([src_ext] + [c.target_ext for c in chain])
+    print(f"no direct {src_ext} -> {tgt_ext} converter; chaining via: {steps}")
+    current = Path(source)
+    temps = []
+    try:
+        for i, conv in enumerate(chain):
+            if i == len(chain) - 1:
+                out = Path(target)
+            else:
+                fd, name = tempfile.mkstemp(suffix=f".{conv.target_ext}")
+                os.close(fd)
+                out = Path(name)
+                temps.append(out)
+            conv.fn(current, out)
+            current = out
+        print(f"ok: {source} -> {target} (via {steps})")
+        return 0
+    except ConversionError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 5
+    except Exception as exc:  # noqa: BLE001
+        print(f"error: chained conversion failed: {exc}", file=sys.stderr)
+        return 6
+    finally:
+        for t in temps:
+            try:
+                t.unlink()
+            except OSError:
+                pass
+
+
 def _do_convert(args: argparse.Namespace) -> int:
     source, target = Path(args.source), Path(args.target)
     if not source.exists():
@@ -46,6 +82,10 @@ def _do_convert(args: argparse.Namespace) -> int:
     tgt_ext = (args.to or target.suffix.lstrip(".")).lower()
     conv = registry.get(src_ext, tgt_ext)
     if conv is None:
+        # No direct converter — try a chained route (e.g. md -> txt -> pdf).
+        chain = registry.find_path(src_ext, tgt_ext)
+        if chain:
+            return _run_chain(source, target, src_ext, tgt_ext, chain)
         print(f"error: no converter for {src_ext} -> {tgt_ext}", file=sys.stderr)
         alts = registry.targets_for(src_ext)
         if alts:

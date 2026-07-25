@@ -97,6 +97,42 @@ class Registry:
         src = _norm(source_ext)
         return sorted(t for (s, t) in self._converters if s == src)
 
+    def find_path(
+        self, source_ext: str, target_ext: str, *, max_hops: int = 3
+    ) -> Optional[List["Converter"]]:
+        """Return the shortest chain of *available* converters that turns
+        ``source_ext`` into ``target_ext`` (e.g. ``md -> txt -> pdf``), or
+        ``None`` if no route within ``max_hops`` exists.
+
+        Only converters whose optional dependencies are importable are used, so
+        a returned chain is always runnable. Callers should try :meth:`get`
+        (a direct converter) first; this handles the indirect case.
+        """
+        from collections import deque
+
+        src, tgt = _norm(source_ext), _norm(target_ext)
+        if src == tgt:
+            return []
+        # Adjacency of available converters: ext -> [(next_ext, converter)].
+        adj: Dict[str, List[Tuple[str, "Converter"]]] = {}
+        for (s, t), conv in self._converters.items():
+            if conv.available():
+                adj.setdefault(s, []).append((t, conv))
+
+        queue = deque([(src, [])])
+        seen = {src}
+        while queue:
+            cur, path = queue.popleft()
+            if len(path) >= max_hops:
+                continue
+            for nxt, conv in adj.get(cur, []):
+                if nxt == tgt:
+                    return path + [conv]
+                if nxt not in seen:
+                    seen.add(nxt)
+                    queue.append((nxt, path + [conv]))
+        return None
+
 
 def _norm(ext: str) -> str:
     return ext.lower().lstrip(".")
