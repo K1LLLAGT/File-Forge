@@ -48,7 +48,7 @@ enforcing a depth limit. A directory is recorded as an **instance** when either:
 
 1. its **name** is a FileForge alias (`matched_via="name"`), **or**
 2. it contains an **instance marker** (`matched_via="marker"`), one of:
-   `pyproject.toml`, `src/fileforge`, `android/app/src/main/python/ffbridge.py`,
+   `pyproject.toml`, `src/fileforge`, `android2/app/src/main/python/ffbridge.py`,
    `desktop/fileforge_gui.py`.
 
 Default roots (when none are given) are the current directory, `$HOME`, and the

@@ -1,10 +1,14 @@
 # FileForge 2.0 — Android setup
 
-The Android app lives in [`android/`](../android/) and embeds the FileForge
-Python engine through **Chaquopy**. The discovery/suggestion layer added in
-FileForge 2.0 (`fileforge.discovery`, `fileforge.suggestions`,
-`fileforge.unified_cli`) is pure-Python and dependency-free, so it runs inside
-the Chaquopy interpreter unchanged.
+The Android app lives in [`android2/`](../android2/) (application id
+`com.fileforge2.app`) and embeds the FileForge Python engine through
+**Chaquopy**. The discovery/suggestion layer added in FileForge 2.0
+(`fileforge.discovery`, `fileforge.suggestions`, `fileforge.unified_cli`) is
+pure-Python and dependency-free, so it runs inside the Chaquopy interpreter
+unchanged.
+
+For the full module layout and a feature walkthrough, see
+[`../android2/ANDROID_SETUP.md`](../android2/ANDROID_SETUP.md).
 
 ## Prerequisites
 
@@ -15,17 +19,20 @@ the Chaquopy interpreter unchanged.
 
 ## Wiring the engine into the app
 
-1. Open the `android/` folder in Android Studio and let Gradle sync.
-2. The Python bridge is `android/app/src/main/python/ffbridge.py`. To expose the
-   new suggestion engine to Kotlin, add the FileForge package to Chaquopy's
-   `pip` block in `android/app/build.gradle.kts`:
+1. Open the `android2/` folder in Android Studio and let Gradle sync.
+2. The Python bridge is `android2/app/src/main/python/ffbridge.py`. It already
+   exposes the suggestion engine to Kotlin (`ranked_targets`, `suggest_dir`).
+   Chaquopy pulls the engine in via the `pip` block in
+   `android2/app/build.gradle.kts`:
 
    ```kotlin
    chaquopy {
        defaultConfig {
            pip {
-               // Point at the repo's src/ layout, or the published wheel.
-               install("pyfile-convert")   // once published
+               install("Pillow")
+               // A locally-built wheel of this repo (includes the 2.0 layer)
+               // is preferred when present; otherwise falls back to PyPI.
+               install("pyfile-convert")
            }
        }
    }
@@ -44,22 +51,22 @@ the Chaquopy interpreter unchanged.
 
 ## Re-branding the package
 
-To ship under a new application id (e.g. `com.yourname.fileforge2`):
+To ship under a different application id (e.g. `com.yourname.fileforge`):
 
-1. Edit `android/app/build.gradle.kts` → `defaultConfig.applicationId`.
-2. Update `namespace` to match.
-3. Rename the Kotlin package folders under
-   `android/app/src/main/java/…` and the `package` line in `MainActivity.kt`.
-4. Update `android/app/src/main/AndroidManifest.xml` if it hard-codes the id.
-
-See [`../android/README.md`](../android/README.md) for the full module layout.
+1. Edit `android2/app/build.gradle.kts` → `namespace` and
+   `defaultConfig.applicationId`.
+2. Rename the Kotlin package folders under
+   `android2/app/src/main/java/…` and the `package` line in `MainActivity.kt`.
+3. Nothing in `AndroidManifest.xml` hard-codes the id (it uses
+   `${applicationId}`), so the FileProvider authority updates automatically.
 
 ## Build
 
 ```bash
-cd android
+cd android2
 ./gradlew assembleDebug        # debug APK
 ./gradlew assembleRelease      # release (signed) APK
 ```
 
-The APK lands in `android/app/build/outputs/apk/`.
+The APK lands in `android2/app/build/outputs/apk/`. CI also builds it — see
+[`.github/workflows/build-android.yml`](../.github/workflows/build-android.yml).

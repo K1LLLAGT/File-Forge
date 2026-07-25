@@ -41,8 +41,7 @@ pip install -e '.[cloud]'    # run the Cloud API locally
 | `cloud-api/`        | Strategy 3 & 7 — Cloud API         | FastAPI convert/formats/usage + metering     |
 | `desktop/`          | Strategy 6 — Desktop GUI           | Tkinter reference GUI (PyQt/Electron in Pro) |
 | `windows/`          | FileForge 2.0 — Windows app        | PyInstaller `FileForge.exe` (browser + suggestions + history) |
-| `android/`          | Strategy 2 — Android GUI           | Compose + Chaquopy architecture & skeleton   |
-| `android2/`         | FileForge 2.0 — re-branded Android | `com.fileforge2.app` (ranked targets + history) |
+| `android2/`         | Strategy 2 — Android GUI           | `com.fileforge2.app` — Compose + Chaquopy (ranked targets + history) |
 | `magisk-module/`    | Strategy 9 — Magisk module         | Flashable system-wide install                |
 | `scripts/`          | Fulfillment / packaging            | License issuing, Magisk zip builder          |
 
