@@ -21,6 +21,15 @@ _IMAGE_ROUTES = [
     ("png", "gif"),
     ("png", "tiff"),
     ("heic", "jpg"),
+    # --- additional common routes ---
+    ("jpg", "webp"),
+    ("jpeg", "webp"),
+    ("webp", "jpg"),
+    ("bmp", "jpg"),
+    ("gif", "png"),
+    ("tiff", "png"),
+    ("heic", "png"),
+    ("png", "ico"),
 ]
 
 

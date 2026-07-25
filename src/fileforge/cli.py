@@ -165,6 +165,81 @@ def _do_license(args: argparse.Namespace) -> int:
     return 0
 
 
+# Optional Python dependency -> (pip extra, human label). Drives `doctor`.
+_OPTIONAL_DEPS = {
+    "PIL": ("images", "Pillow — image conversions"),
+    "pypdf": ("pdf", "pypdf — PDF text extraction / merge / split"),
+    "pytesseract": ("ocr", "pytesseract — OCR"),
+    "openpyxl": ("xlsx", "openpyxl — Excel (.xlsx)"),
+    "yaml": ("yaml", "PyYAML — YAML"),
+    "xmltodict": ("xml", "xmltodict — XML"),
+    "tomli": ("toml", "tomli — TOML"),
+    "pyttsx3": ("tts", "pyttsx3 — text to speech"),
+}
+
+
+def _needs_ffmpeg(conv) -> bool:
+    return "ffmpeg" in conv.description.lower()
+
+
+def _do_doctor(args: argparse.Namespace) -> int:
+    """Report which optional deps are installed and which conversions are
+    actually usable right now — so 'no converter'/'needs deps' surprises are
+    diagnosable in one command."""
+    import importlib.util
+    import shutil
+
+    has_ffmpeg = shutil.which("ffmpeg") is not None
+
+    def ready(conv) -> bool:
+        if not conv.available():          # required Python modules present?
+            return False
+        if _needs_ffmpeg(conv) and not has_ffmpeg:
+            return False
+        return True
+
+    routes = registry.routes()
+    ready_routes = [c for c in routes if ready(c)]
+    blocked = [c for c in routes if not ready(c)]
+
+    print(f"FileForge {__version__} — doctor\n")
+
+    print("optional Python packages:")
+    for mod, (extra, label) in _OPTIONAL_DEPS.items():
+        ok = importlib.util.find_spec(mod) is not None
+        mark = "ok " if ok else "  —"
+        hint = "" if ok else f"    → pip install 'pyfile-convert[{extra}]'"
+        print(f"  [{mark}] {label}{hint}")
+
+    print("\nsystem tools:")
+    mark = "ok " if has_ffmpeg else "  —"
+    hint = "" if has_ffmpeg else "    → install ffmpeg (apt / brew / pkg)"
+    print(f"  [{mark}] ffmpeg — video & audio conversions{hint}")
+
+    print(f"\nconversions: {len(ready_routes)}/{len(routes)} ready to use")
+
+    if args.list:
+        if ready_routes:
+            print("\nready:")
+            for c in ready_routes:
+                print(f"  {c.source_ext:>6} -> {c.target_ext}")
+        if blocked:
+            print("\nneeds a dependency:")
+            for c in blocked:
+                if c.requires:
+                    need = ", ".join(c.requires)
+                elif _needs_ffmpeg(c):
+                    need = "ffmpeg"
+                else:
+                    need = "?"
+                print(f"  {c.source_ext:>6} -> {c.target_ext:<6} [needs: {need}]")
+    elif blocked:
+        print(f"  {len(blocked)} route(s) need extra deps — "
+              f"run `fileforge doctor --list` for details")
+
+    return 0
+
+
 def main() -> int:
     load_builtin_converters()
     parser = argparse.ArgumentParser(
@@ -204,6 +279,15 @@ def main() -> int:
     license_parser.add_argument("--status", action="store_true", help="show license status")
     license_parser.add_argument("--activate", help="activate a license key")
     license_parser.set_defaults(func=_do_license)
+
+    # doctor
+    doctor_parser = subparsers.add_parser(
+        "doctor", help="report installed deps and which conversions are usable"
+    )
+    doctor_parser.add_argument(
+        "--list", action="store_true", help="list every route and its status"
+    )
+    doctor_parser.set_defaults(func=_do_doctor)
 
     args = parser.parse_args()
     if not args.command:
