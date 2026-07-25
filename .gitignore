@@ -32,3 +32,5 @@ android2/app/wheels/
 windows/build/
 windows/dist/
 *.spec.bak
+
+.gradle/
