@@ -82,7 +82,7 @@ up the Python engine and CLIs that the desktop app reuses.
 Android uses Android Studio + Gradle + Chaquopy rather than a shell installer.
 The discovery/suggestion engine is pure-Python and runs inside Chaquopy
 unchanged. See [`setup/setup_android.md`](setup/setup_android.md) and
-[`android/README.md`](android/README.md).
+[`android2/ANDROID_SETUP.md`](android2/ANDROID_SETUP.md).
 
 ## Verify anytime
 

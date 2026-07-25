@@ -177,7 +177,7 @@ _SKIP_DIRS = {
 _INSTANCE_MARKERS = (
     "pyproject.toml",
     "src/fileforge",
-    "android/app/src/main/python/ffbridge.py",
+    "android2/app/src/main/python/ffbridge.py",
     "desktop/fileforge_gui.py",
 )
 

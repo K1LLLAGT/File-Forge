@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Compose supplies the real UI theme; this just gives the Activity a
-         no-action-bar shell that works in light and dark. -->
-    <style name="Theme.FileForge" parent="android:Theme.Material.Light.NoActionBar" />
-</resources>
