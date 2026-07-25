@@ -44,6 +44,23 @@ pip install -e '.[cloud]'    # run the Cloud API locally
 | `magisk-module/`    | Strategy 9 — Magisk module         | Flashable system-wide install                |
 | `scripts/`          | Fulfillment / packaging            | License issuing, Magisk zip builder          |
 
+## FileForge 2.0 — discovery & suggestion layer
+
+Three extra CLIs sit *on top of* the conversion engine to help you find
+FileForge checkouts and figure out what to convert:
+
+```bash
+fileforge-discover                 # find & normalize FileForge instances on disk
+fileforge-suggest ./assets         # scan a directory, suggest conversions
+fileforge-cli --dir . --discover   # unified report: aliases + matrix + recommendations
+```
+
+`fileforge-suggest --emit-scripts ./out --source png --target jpg` writes
+`run_conversions.sh` / `run_conversions.ps1` that drive `fileforge convert`.
+Docs: [DISCOVERY.md](DISCOVERY.md), [CONVERSIONS.md](CONVERSIONS.md),
+[USER_FLOW.md](USER_FLOW.md). One-shot setup: `./bootstrap.sh`
+([BOOTSTRAP.md](BOOTSTRAP.md)).
+
 ## Tiers
 
 | Tier           | Package                                      |
