@@ -9,9 +9,15 @@ const cacheDirectory = path.join(process.env.HOME || __dirname, ".next-cache");
 
 const nextConfig = {
   // Lets the Next.js dev server accept requests/HMR from these origins.
-  // Needed because Termux + some Android browsers/webviews don't always
-  // present as plain "localhost".
-  allowedDevOrigins: ["127.0.0.1", "localhost"],
+  // 127.0.0.1/localhost cover the phone itself. FILEFORGE_LAN_HOST is set
+  // by fileforge-launcher.sh at each launch (via scripts/lan-ip.js) so
+  // other devices on the same WiFi can reach the dashboard too, without
+  // hardcoding a DHCP-assigned IP that can change between launches.
+  allowedDevOrigins: [
+    "127.0.0.1",
+    "localhost",
+    ...(process.env.FILEFORGE_LAN_HOST ? [process.env.FILEFORGE_LAN_HOST] : []),
+  ],
 
   typescript: {
     ignoreBuildErrors: true,

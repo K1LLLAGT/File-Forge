@@ -49,6 +49,14 @@ trap cleanup EXIT INT TERM
 
 echo "[fileforge-launcher] root: $FILEFORGE_ROOT"
 
+LAN_IP="$(node "$FILEFORGE_ROOT/scripts/lan-ip.js" 2>/dev/null)"
+if [ -n "$LAN_IP" ]; then
+  export FILEFORGE_LAN_HOST="$LAN_IP"
+  echo "[fileforge-launcher] LAN access: http://$LAN_IP:8090/conversion-dashboard"
+else
+  echo "[fileforge-launcher] Could not detect a LAN IP — only this device will be able to reach the dashboard."
+fi
+
 # --- Redis ---
 if redis-cli ping >/dev/null 2>&1; then
   echo "[fileforge-launcher] Redis already running."
