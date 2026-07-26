@@ -1,0 +1,134 @@
+name: release-binaries
+
+# Builds FileForge.exe (Windows) and the com.fileforge2.app APK (Android) and
+# attaches both to a GitHub Release. Created as a DRAFT by default so it does
+# not trigger the PyPI publish workflow (release.yml fires on release:published).
+#
+# Run it from the Actions tab (Run workflow) or via workflow_dispatch. Inputs
+# let you pick the tag and whether to publish immediately.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag"
+        required: true
+        default: "v2.0.0"
+      draft:
+        description: "Create as draft (true) — draft does not trigger PyPI publish"
+        required: true
+        default: "true"
+
+permissions:
+  contents: write   # required to create the release + upload assets
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install engine + PyInstaller
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[images,pdf]"
+          python -m pip install pyinstaller
+      - name: Build FileForge.exe
+        working-directory: windows
+        run: pyinstaller --noconfirm --clean fileforge.spec
+      - name: Stage asset
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path assets | Out-Null
+          Copy-Item windows/dist/FileForge.exe "assets/FileForge-${{ inputs.tag }}.exe"
+          Get-ChildItem assets
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-exe
+          path: assets/*.exe
+          if-no-files-found: error
+
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build local FileForge engine wheel (includes 2.0 layer)
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build --wheel --outdir android2/app/wheels .
+      - uses: android-actions/setup-android@v3
+      - name: Install SDK packages
+        run: |
+          sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+      - name: Set up Gradle 8.5
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.5"
+      - name: Build debug APK
+        working-directory: android2
+        run: gradle :app:assembleDebug --no-daemon --stacktrace
+      - name: Stage asset
+        run: |
+          mkdir -p assets
+          apk=$(find android2/app/build/outputs/apk -name "*.apk" | head -1)
+          cp "$apk" "assets/FileForge2-${{ inputs.tag }}-debug.apk"
+          ls -l assets
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: assets/*.apk
+          if-no-files-found: error
+
+  release:
+    needs: [windows, android]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: List assets
+        run: ls -lR dist
+      - name: Create release with binaries attached
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag }}
+          name: FileForge ${{ inputs.tag }} — Desktop & Android apps
+          draft: ${{ inputs.draft == 'true' }}
+          fail_on_unmatched_files: true
+          body: |
+            FileForge ${{ inputs.tag }} — desktop + Android apps, built on the FileForge 2.0 discovery/suggestion engine.
+
+            ## Downloads
+            - **FileForge-${{ inputs.tag }}.exe** — Windows 11 desktop app (directory browser, ranked conversion suggestions, progress, history). Built with PyInstaller.
+            - **FileForge2-${{ inputs.tag }}-debug.apk** — re-branded Android app (`com.fileforge2.app`). This is a **debug** build (unsigned); enable "install from unknown sources" to sideload.
+
+            Both bundle the shared conversion engine (converters registry + the 2.0 suggestion layer).
+
+            ## Highlights
+            **Discovery & suggestion layer (new)**
+            - `fileforge-discover` — normalize FileForge aliases and enumerate instances on disk.
+            - `fileforge-suggest` — scan a directory, suggest conversions (real engine routes + generics), emit `run_conversions.sh` / `.ps1`.
+            - `fileforge-cli` — unified report: alias resolution + conversion matrix + recommendations.
+
+            **Apps**
+            - Windows `FileForge.exe`: folder browser, file-type summary, ranked suggestion panel, threaded conversion with progress, history tab.
+            - Android `com.fileforge2.app`: Compose Convert + History tabs, suggestion-ranked target picker, persisted history. (Retires the original `com.k1lllagt.fileforge` app.)
+
+            **Tooling**
+            - `bootstrap.sh` + `setup/` scripts (OS detection + subsystem verification).
+            - CI builds both binaries on their native toolchains (PyInstaller on Windows; JDK 17 + Android SDK 34 + Chaquopy on Linux) and attaches them here.
+
+            See [CHANGELOG.md](https://github.com/K1LLLAGT/File-Forge/blob/main/CHANGELOG.md) for full details.
+          files: |
+            dist/*.exe
+            dist/*.apk
