@@ -97,6 +97,15 @@ def convert_video(input_path: str, output_path: str) -> None:
     run([FFMPEG, "-y", "-i", input_path, output_path])
 
 
+def convert_video_to_gif(input_path: str, output_path: str) -> None:
+    # A video file is not a static image ImageMagick can sensibly read, so
+    # this must be special-cased ahead of the generic "-> image format"
+    # catch below — otherwise convert_generic would wrongly hand an .mp4
+    # to ImageMagick instead of ffmpeg. Filter matches the fileforge
+    # registry's own "gif" video preset (fps=12, 480px wide, lanczos scale).
+    run([FFMPEG, "-y", "-i", input_path, "-vf", "fps=12,scale=480:-1:flags=lanczos", output_path])
+
+
 def extract_audio(input_path: str, output_path: str) -> None:
     run([FFMPEG, "-y", "-i", input_path, "-vn", output_path])
 
@@ -180,6 +189,8 @@ def convert_generic(input_path: str, output_path: str) -> None:
         return convert_svg_to_png(input_path, output_path)
     if in_ext == ".heic" and out_ext == ".jpg":
         return convert_heic_to_jpg(input_path, output_path)
+    if in_ext in VIDEO_EXTS and out_ext == ".gif":
+        return convert_video_to_gif(input_path, output_path)
     if in_ext in VIDEO_EXTS and out_ext in AUDIO_EXTS:
         return extract_audio(input_path, output_path)
     if in_ext in DOC_EXTS and out_ext == ".pdf":
@@ -193,19 +204,27 @@ def convert_generic(input_path: str, output_path: str) -> None:
     if out_ext == ".untar":
         return extract_tar(input_path, os.path.dirname(output_path))
 
-    # General family-based conversions
+    # Try the src/fileforge registry next, before the generic family catches
+    # below — it has specific, correct converters for pairs the generic
+    # catches would otherwise mishandle (e.g. txt->png is meant to produce a
+    # QR code, not have ImageMagick try to render raw text as an image;
+    # pdf->png needs a real PDF renderer, not ImageMagick's inconsistent
+    # Ghostscript delegate). It also covers pairs the generic catches don't
+    # know about at all (subtitles, config/data formats, markup, encoding,
+    # PDF text extraction, ASCII art, SVG/PDF rasterization).
+    if _convert_via_fileforge_registry(input_path, output_path, in_ext, out_ext):
+        return
+
+    # Last-resort generic family conversions: no specific converter exists
+    # above (special-cased or via the registry) for this exact pair, but the
+    # target is a standard image/video/audio format ImageMagick/ffmpeg can
+    # usually produce from a same-family source without needing any extra
+    # Python dependency installed.
     if out_ext in IMAGE_EXTS:
         return convert_image(input_path, output_path)
     if out_ext in VIDEO_EXTS:
         return convert_video(input_path, output_path)
     if out_ext in AUDIO_EXTS:
         return convert_audio(input_path, output_path)
-
-    # Everything else this project doesn't have a direct route for —
-    # subtitles, config/data formats, markup, encoding, PDF text extraction,
-    # QR codes, ASCII art, SVG/PDF rasterization — falls back to the
-    # src/fileforge registry if it's installed.
-    if _convert_via_fileforge_registry(input_path, output_path, in_ext, out_ext):
-        return
 
     raise ConversionError(f"Unsupported conversion: {input_path} -> {output_path}")

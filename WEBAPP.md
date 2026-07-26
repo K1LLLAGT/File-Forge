@@ -45,6 +45,8 @@ cd .. && npm run dev                    # :8090
 
 Open `http://127.0.0.1:8090/conversion-dashboard`.
 
+Full list of what converts to what: [WEBAPP_CONVERSIONS.md](WEBAPP_CONVERSIONS.md).
+
 ## What was actually broken, and what got fixed during the unification
 
 The old `~/fileforge` and `~/fileforge-web-site` were read file-by-file
