@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 
 import redis
 
@@ -19,6 +20,8 @@ from engine import convert_generic
 REDIS_URL = os.environ.get("FILEFORGE_REDIS_URL", "redis://127.0.0.1:6379/0")
 QUEUE_NAME = "fileforge:jobs"
 RESULTS_HASH = "fileforge:results"
+HISTORY_LIST = "fileforge:history"
+HISTORY_MAX = 100
 
 r = redis.from_url(REDIS_URL)
 
@@ -50,10 +53,43 @@ def queue_depth() -> int:
     return r.llen(QUEUE_NAME)
 
 
+def record_history(job: dict) -> None:
+    """Append a completed/errored job to a small persistent history list.
+
+    Used by both server.py (for synchronous /convert, /batch-convert jobs)
+    and the worker below (for queued jobs), so /dashboard/jobs shows real
+    recent activity even across a backend restart — unlike the in-memory
+    JOBS dict in server.py, which is wiped whenever uvicorn restarts.
+    """
+    try:
+        r.lpush(HISTORY_LIST, json.dumps(job))
+        r.ltrim(HISTORY_LIST, 0, HISTORY_MAX - 1)
+    except redis.exceptions.RedisError as exc:
+        print(f"[ff_queue] Could not record history: {exc}")
+
+
+def list_history(limit: int = 25) -> list[dict]:
+    try:
+        items = r.lrange(HISTORY_LIST, 0, limit - 1)
+    except redis.exceptions.RedisError:
+        return []
+    return [json.loads(i) for i in items]
+
+
 def worker_loop() -> None:
     print(f"[ff_queue] Worker started. Listening on '{QUEUE_NAME}' at {REDIS_URL}")
     while True:
-        job = dequeue_job()
+        try:
+            job = dequeue_job()
+        except redis.exceptions.RedisError as exc:
+            # A blocking BRPOP over a long-idle socket can hit a transient
+            # read timeout (e.g. Android throttling a background Termux
+            # session's networking when the screen locks). That's not a
+            # reason to kill the whole worker — log it and keep listening.
+            print(f"[ff_queue] Redis connection hiccup, retrying: {exc}")
+            time.sleep(1)
+            continue
+
         if not job:
             continue
         job_id = job.get("jobId", "unknown")
@@ -65,7 +101,12 @@ def worker_loop() -> None:
             job["status"] = "error"
             job["error"] = str(exc)
             print(f"[ff_queue] {job_id} failed: {exc}")
-        r.hset(RESULTS_HASH, job_id, json.dumps(job))
+
+        try:
+            r.hset(RESULTS_HASH, job_id, json.dumps(job))
+            record_history(job)
+        except redis.exceptions.RedisError as exc:
+            print(f"[ff_queue] Could not write result for {job_id}: {exc}")
 
 
 if __name__ == "__main__":

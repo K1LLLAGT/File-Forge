@@ -36,6 +36,22 @@ fi
 
 PIDS=()
 
+wait_for_http() {
+  local url="$1"
+  local name="$2"
+  local tries="${3:-40}"
+  for ((i = 1; i <= tries; i++)); do
+    if curl -sf --max-time 2 "$url" >/dev/null 2>&1; then
+      echo "[fileforge-launcher] $name is up ($url)"
+      return 0
+    fi
+    sleep 0.5
+  done
+  echo "[fileforge-launcher] WARNING: $name did not respond at $url after $((tries / 2))s." >&2
+  echo "[fileforge-launcher] Run ./scripts/fileforge-doctor.sh to diagnose, or check the process directly if something else may already hold that port." >&2
+  return 1
+}
+
 cleanup() {
   command -v termux-wake-unlock >/dev/null 2>&1 && termux-wake-unlock
   echo ""
@@ -96,8 +112,9 @@ else
 fi
 PIDS+=($!)
 
-echo "[fileforge-launcher] Waiting for services to come up..."
-sleep 5
+echo "[fileforge-launcher] Waiting for backend and frontend to come up..."
+wait_for_http "http://127.0.0.1:8091/health" "FastAPI backend" || true
+wait_for_http "http://127.0.0.1:8090/" "Next.js frontend" 60 || true
 
 echo "[fileforge-launcher] Opening Conversion Dashboard..."
 if command -v termux-open-url >/dev/null 2>&1; then

@@ -33,7 +33,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from batch import batch_convert
 from compression import compress_video
 from engine import ConversionError, convert_generic
-from ff_queue import enqueue_job, get_result, queue_depth
+from ff_queue import enqueue_job, get_result, list_history, queue_depth, record_history
 from thumbnails import image_thumbnail, video_thumbnail
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -100,6 +100,7 @@ async def convert_file(file: UploadFile = File(...), target_ext: str = Form(...)
         "target_ext": target_ext,
         "filename": file.filename,
     }
+    record_history({"jobId": job_id, **JOBS[job_id]})
 
     return {"jobId": job_id, "status": "completed", "downloadUrl": f"/download/{job_id}"}
 
@@ -140,6 +141,7 @@ async def batch_convert_endpoint(files: list[UploadFile] = File(...), target_ext
     results = batch_convert(jobs)
     for r in results:
         JOBS[r["jobId"]] = r
+        record_history(r)
     return {"jobs": results}
 
 
@@ -260,13 +262,21 @@ dashboard_router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 @dashboard_router.get("/jobs")
 async def dashboard_jobs():
-    recent = list(JOBS.items())[-25:]
+    # Persistent history survives backend restarts (Redis-backed); the
+    # in-memory JOBS dict does not, so history is the primary source and
+    # JOBS only fills in anything from the current process not yet flushed.
+    history = list_history(limit=25)
+    seen_ids = {j.get("jobId") for j in history}
+    recent_in_memory = [
+        {"jobId": jid, **data} for jid, data in list(JOBS.items())[-25:]
+        if jid not in seen_ids
+    ]
     return {
         "endpoints": [
             "/convert", "/batch-convert", "/queue-convert", "/queue-status/{jobId}",
             "/thumbnail/image", "/thumbnail/video", "/compress/video",
         ],
-        "recentJobs": [{"jobId": jid, **data} for jid, data in recent],
+        "recentJobs": (history + recent_in_memory)[:25],
     }
 
 
