@@ -1,0 +1,5 @@
+[console_scripts]
+fileforge = fileforge.cli:main
+fileforge-cli = fileforge.unified_cli:main
+fileforge-discover = fileforge.discovery:main
+fileforge-suggest = fileforge.suggestions:main

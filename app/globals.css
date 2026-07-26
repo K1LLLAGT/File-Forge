@@ -1,0 +1,75 @@
+@config "../tailwind.config.js";
+
+@import "tailwindcss";
+
+/* ============================================================
+   FileForge dark-neon theme pack
+   ============================================================ */
+
+body {
+  @apply bg-fileforgeBg text-fileforgeText;
+}
+
+/* --- Surfaces --- */
+.ff-card {
+  @apply bg-fileforgeCard border border-fileforgeBorder rounded-fileforge p-5 shadow-fileforgeSoft;
+}
+
+/* --- Buttons --- */
+.ff-btn-primary {
+  @apply bg-fileforgeAccent text-black font-semibold px-4 py-2 rounded-fileforge shadow-fileforge hover:bg-fileforgeAccentSoft transition disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.ff-btn-secondary {
+  @apply bg-fileforgeBorder text-fileforgeText px-4 py-2 rounded-fileforge hover:bg-fileforgeCard transition disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+/* --- Form controls --- */
+.ff-input {
+  @apply bg-fileforgeCard border border-fileforgeBorder text-fileforgeText px-3 py-2 rounded-fileforge w-full focus:outline-none focus:border-fileforgeAccent transition;
+}
+
+.ff-label {
+  @apply block text-xs text-fileforgeMuted mb-1;
+}
+
+/* --- Typography --- */
+.ff-title {
+  @apply text-fileforgeText font-bold text-2xl mb-4;
+}
+
+.ff-subtitle {
+  @apply text-fileforgeAccentSoft font-semibold text-lg mb-2;
+}
+
+/* Card-level heading/body pair, used by the homepage feature grid. */
+.ff-card-title {
+  @apply text-fileforgeText font-semibold text-lg mb-2;
+}
+
+.ff-card-body {
+  @apply text-sm text-fileforgeMuted;
+}
+
+/* Hero heading/subtitle pair, used by the homepage hero section. */
+.ff-hero-title {
+  @apply text-4xl md:text-5xl font-bold text-fileforgeText tracking-tight;
+}
+
+.ff-hero-subtitle {
+  @apply text-base md:text-lg text-fileforgeMuted max-w-2xl;
+}
+
+/* --- Status text --- */
+.ff-status-ok {
+  @apply text-fileforgeAccentSoft;
+}
+
+.ff-status-error {
+  @apply text-red-400;
+}
+
+/* --- Code / terminal blocks --- */
+.ff-code {
+  @apply bg-black/60 border border-fileforgeBorder rounded p-4 text-xs text-fileforgeAccentSoft overflow-x-auto;
+}

@@ -1,0 +1,129 @@
+#!/data/data/com.termux/files/usr/bin/bash
+#
+# fileforge-cli — command-line client for the FileForge dashboard API.
+#
+# Talks to the Next.js API layer (port 8090 by default), which in turn
+# proxies to the FastAPI backend (port 8091). Set FILEFORGE_API to point
+# elsewhere if you're not running the default local setup.
+
+set -uo pipefail
+
+API="${FILEFORGE_API:-http://127.0.0.1:8090}"
+FILEFORGE_ROOT="${FILEFORGE_ROOT:-$HOME/fileforge}"
+
+cmd="${1:-}"
+[ $# -gt 0 ] && shift
+
+require_file() {
+  if [ -z "${1:-}" ] || [ ! -f "$1" ]; then
+    echo "error: file not found: ${1:-<missing>}" >&2
+    exit 1
+  fi
+}
+
+case "$cmd" in
+  convert)
+    INPUT="${1:-}"; TO="${2:-}"
+    if [ -z "$TO" ]; then echo "usage: fileforge-cli convert <input> <to-ext>" >&2; exit 1; fi
+    require_file "$INPUT"
+    curl -sS -X POST "$API/api/convert" \
+      -F "file=@$INPUT" \
+      -F "targetExt=$TO"
+    echo
+    ;;
+
+  batch)
+    TO="${1:-}"; shift || true
+    if [ -z "$TO" ] || [ $# -eq 0 ]; then
+      echo "usage: fileforge-cli batch <to-ext> <files...>" >&2
+      exit 1
+    fi
+    CURL_ARGS=(-sS -X POST "$API/api/batch-convert" -F "targetExt=$TO")
+    for f in "$@"; do
+      require_file "$f"
+      CURL_ARGS+=(-F "files=@$f")
+    done
+    curl "${CURL_ARGS[@]}"
+    echo
+    ;;
+
+  queue)
+    INPUT="${1:-}"; TO="${2:-}"
+    if [ -z "$TO" ]; then echo "usage: fileforge-cli queue <input> <to-ext>" >&2; exit 1; fi
+    require_file "$INPUT"
+    curl -sS -X POST "$API/api/queue-convert" \
+      -F "file=@$INPUT" \
+      -F "targetExt=$TO"
+    echo
+    ;;
+
+  queue-status)
+    JOB="${1:-}"
+    if [ -z "$JOB" ]; then echo "usage: fileforge-cli queue-status <jobId>" >&2; exit 1; fi
+    curl -sS "$API/api/queue-status/$JOB"
+    echo
+    ;;
+
+  thumb-image)
+    INPUT="${1:-}"
+    require_file "$INPUT"
+    OUT="$FILEFORGE_ROOT/thumb-image.png"
+    curl -sS -X POST "$API/api/thumbnail/image" -F "file=@$INPUT" -o "$OUT"
+    echo "Saved $OUT"
+    ;;
+
+  thumb-video)
+    INPUT="${1:-}"
+    require_file "$INPUT"
+    OUT="$FILEFORGE_ROOT/thumb-video.png"
+    curl -sS -X POST "$API/api/thumbnail/video" -F "file=@$INPUT" -o "$OUT"
+    echo "Saved $OUT"
+    ;;
+
+  compress)
+    INPUT="${1:-}"; PRESET="${2:-medium}"; CRF="${3:-23}"
+    require_file "$INPUT"
+    curl -sS -X POST "$API/api/compress/video" \
+      -F "file=@$INPUT" \
+      -F "preset=$PRESET" \
+      -F "crf=$CRF"
+    echo
+    ;;
+
+  dashboard-jobs)
+    curl -sS "$API/api/dashboard/jobs"
+    echo
+    ;;
+
+  dashboard-thumbs)
+    curl -sS "$API/api/dashboard/thumbs"
+    echo
+    ;;
+
+  dashboard-queue)
+    curl -sS "$API/api/dashboard/queue"
+    echo
+    ;;
+
+  *)
+    cat <<EOF
+FileForge CLI  (root: $FILEFORGE_ROOT, api: $API)
+
+Commands:
+  convert <input> <to-ext>          Convert a single file
+  batch <to-ext> <files...>         Convert several files to the same extension
+  queue <input> <to-ext>            Enqueue a conversion on the Redis worker
+  queue-status <jobId>              Poll a queued job's status
+  thumb-image <input>               Save an image thumbnail to \$FILEFORGE_ROOT
+  thumb-video <input>               Save a video-frame thumbnail to \$FILEFORGE_ROOT
+  compress <input> [preset] [crf]   Re-encode video (defaults: medium, 23)
+  dashboard-jobs                    List recent jobs
+  dashboard-thumbs                  List recent thumbnails
+  dashboard-queue                   Show current queue depth
+
+Environment:
+  FILEFORGE_API    Base URL of the dashboard API (default: http://127.0.0.1:8090)
+  FILEFORGE_ROOT   Where thumb-image/thumb-video save their output (default: \$HOME/fileforge)
+EOF
+    ;;
+esac

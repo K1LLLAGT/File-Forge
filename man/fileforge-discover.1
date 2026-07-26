@@ -1,0 +1,26 @@
+.TH FILEFORGE-DISCOVER 1 "FileForge 2.0"
+.SH NAME
+fileforge-discover \- scan system for FileForge aliases and instances
+.SH SYNOPSIS
+.B fileforge-discover
+.RB [ --root " DIR" ]
+.RB [ --verbose ]
+.RB [ --json ]
+.SH DESCRIPTION
+fileforge-discover scans the filesystem for FileForge-related binaries,
+wrappers, symlinks, and configuration files. It normalizes paths and
+reports all discovered instances.
+.SH OPTIONS
+.TP
+.BR --root " DIR"
+Root directory to start scanning from. Defaults to current directory.
+.TP
+.BR --verbose
+Print detailed information about each discovered instance.
+.TP
+.BR --json
+Output results as JSON.
+.SH EXAMPLES
+.B fileforge-discover --root ~/file-forge --verbose
+.br
+Scan the ~/file-forge directory with verbose output.

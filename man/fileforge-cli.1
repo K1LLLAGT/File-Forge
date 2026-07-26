@@ -1,0 +1,37 @@
+.TH FILEFORGE-CLI 1 "FileForge 2.0"
+.SH NAME
+fileforge-cli \- perform file conversions via FileForge engine
+.SH SYNOPSIS
+.B fileforge-cli
+.RB [ --from " EXT" ]
+.RB [ --to " EXT[,EXT...]" ]
+.RB [ --input " FILE" ]
+.RB [ --output " FILE" ]
+.RB [ --force ]
+.RB [ --verbose ]
+.SH DESCRIPTION
+fileforge-cli executes conversions using the FileForge engine. It supports
+image, video, audio, and document formats depending on installed backends.
+.SH OPTIONS
+.TP
+.BR --from " EXT"
+Source extension (e.g. png, mp4, mp3).
+.TP
+.BR --to " EXT[,EXT...]"
+Target extension(s). Multiple extensions can be comma-separated.
+.TP
+.BR --input " FILE"
+Input file path.
+.TP
+.BR --output " FILE"
+Output file path.
+.TP
+.BR --force
+Overwrite existing output file.
+.TP
+.BR --verbose
+Print detailed conversion logs.
+.SH EXAMPLES
+.B fileforge-cli --from png --to jpg --input in.png --output out.jpg
+.br
+Convert a PNG image to JPG.

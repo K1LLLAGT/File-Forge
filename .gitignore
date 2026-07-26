@@ -1,36 +1,31 @@
+# Node / Next.js
+node_modules/
+.next/
+.next-cache/
+next-env.d.ts.bak
+npm-debug.log*
+
 # Python
-__pycache__/
-*.py[cod]
-*.egg-info/
-.eggs/
-build/
-dist/
+backend/__pycache__/
+backend/**/__pycache__/
+*.pyc
 .venv/
-venv/
-env/
 
-# Test / coverage
-.pytest_cache/
-.coverage
-htmlcov/
+# Runtime output (created automatically by the backend)
+backend/output/*
+!backend/output/.gitkeep
+backend/compressed/*
+!backend/compressed/.gitkeep
+backend/thumbs/*
+!backend/thumbs/.gitkeep
 
-# OS / editor
+# Env
+.env
+.env.local
+
+# Editor/OS junk
+*.bak
+*.save
 .DS_Store
-*.swp
-.idea/
-.vscode/
-
-# FileForge
-*.license
-*.db
-scratch/
-
-# Locally-built Chaquopy wheels (CI regenerates)
-android2/app/wheels/
-
-# PyInstaller build output
-windows/build/
-windows/dist/
-*.spec.bak
-
-.gradle/
+tsconfig.tsbuildinfo
+*.tsbuildinfo

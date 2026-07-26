@@ -1,146 +1,141 @@
-# FileForge
+# FileForge 2.0 — Unified Project
 
-**A multi-tier file-conversion product ecosystem** — one shared engine powering
-a free CLI, a Pro desktop/Android build, a Cloud API, and Enterprise licensing.
+This replaces both `~/fileforge` (backend/frontend fragments + a separate,
+much larger multi-platform product) and `~/fileforge-web-site` (the Next.js
+site). Everything the web app needs — backend, worker, ffmpeg abstraction,
+frontend, CLI, launcher — now lives in this one directory.
 
-![status](https://img.shields.io/badge/status-active-brightgreen)
-![python](https://img.shields.io/badge/python-3.9%2B-blue)
-![license](https://img.shields.io/badge/license-MIT%20(core)-green)
-![PyPI](https://img.shields.io/pypi/v/pyfile-convert)
+**Not included:** `android2/`, `windows/`, `desktop/`, `cloud-api/`,
+`license-server/`, `magisk-module/`, and the `src/fileforge/` multi-format
+CLI+licensing library that were bundled inside the old `~/fileforge`. Those
+are a separate product line your spec didn't describe touching — they're
+untouched and still wherever they were.
 
-> The free CLI is fully functional and MIT-licensed. Pro / Cloud / Enterprise
-> features unlock over the **same engine** with a license key.
+## Layout
 
----
-
-## Quick start (free CLI)
-
-```bash
-pip install -e .            # or: pip install pyfile-convert  (once published; import/command stay `fileforge`)
-fileforge list             # show all conversions
-fileforge doctor           # what's installed + which conversions are ready
-fileforge convert notes.md notes.html
-fileforge convert data.json data.csv
-fileforge convert report.txt report.pdf     # pure-Python PDF, no deps
-fileforge convert photo.png photo.webp       # images (Pillow)
-fileforge convert track.wav track.mp3        # audio (ffmpeg)
-fileforge convert paper.pdf paper.txt        # extract text (pypdf)
-fileforge convert data.csv data.md           # Markdown table
-fileforge convert config.ini config.json     # config formats
-fileforge convert subs.srt subs.vtt          # subtitles
-fileforge convert notes.md notes.pdf         # chained: md -> txt -> pdf
+```
+fileforge/
+├── backend/            FastAPI app, ffmpeg/ImageMagick/Pandoc engine, Redis worker
+├── app/                 Next.js App Router pages + API proxy routes
+├── components/           Dashboard UI components
+├── cli/fileforge-cli      Bash CLI over the dashboard API
+├── fileforge-launcher.sh  Starts Redis + backend + worker + frontend together
+├── scripts/               Termux setup (install_conversion_tools.sh)
+└── package.json / next.config.js / tailwind.config.js / tsconfig.json
 ```
 
-**Chained conversions:** when no direct converter exists, FileForge routes
-through intermediate formats automatically (e.g. `md → txt → pdf`) and prints
-the path it took.
+## Running it
 
-`fileforge doctor` reports which optional packages (Pillow, pypdf, ffmpeg, …)
-are present and lists exactly which routes are usable right now — run it with
-`--list` for the full per-route breakdown.
-
-Optional accelerators:
-
+**Termux:**
 ```bash
-pip install -e '.[images]'   # PNG/JPG/WEBP/... via Pillow
-pip install -e '.[pdf]'      # PDF merge/split (Pro)
-pip install -e '.[ocr]'      # Tesseract OCR (Pro)
-pip install -e '.[cloud]'    # run the Cloud API locally
+./scripts/install_conversion_tools.sh   # ffmpeg, ImageMagick, Pandoc, Redis, proot Ubuntu for LibreOffice
+npm install
+./fileforge-launcher.sh                 # Redis + backend (:8091) + worker + frontend (:8090)
 ```
 
-## Download the apps
-
-Prebuilt binaries are attached to the latest release
-([**releases/latest**](https://github.com/K1LLLAGT/File-Forge/releases/latest)):
-
-| Platform | Download | Notes |
-|----------|----------|-------|
-| **Windows 11** | [FileForge.exe](https://github.com/K1LLLAGT/File-Forge/releases/download/v2.0.0/FileForge-v2.0.0.exe) | Standalone desktop app (folder browser, ranked suggestions, progress, history). No Python required. |
-| **Android** | [FileForge2 APK](https://github.com/K1LLLAGT/File-Forge/releases/download/v2.0.0/FileForge2-v2.0.0-debug.apk) | `com.fileforge2.app`. **Debug** build (unsigned) — enable "install from unknown sources" to sideload. |
-
-Both are built in CI on their native toolchains and bundle the same conversion
-engine as the CLI. See the [v2.0.0 release notes](https://github.com/K1LLLAGT/File-Forge/releases/tag/v2.0.0)
-for the full changelog.
-
-## What's in the box
-
-| Path                | Tier / Strategy                    | What it is                                   |
-|---------------------|------------------------------------|----------------------------------------------|
-| `src/fileforge/`    | Free CLI + shared engine           | Conversion registry, converters, licensing   |
-| `src/fileforge/pro/`| Pro (batch, OCR, PDF, TTS)         | License-gated advanced features              |
-| `cloud-api/`        | Strategy 3 & 7 — Cloud API         | FastAPI convert/formats/usage + metering     |
-| `desktop/`          | Strategy 6 — Desktop GUI           | Tkinter reference GUI (PyQt/Electron in Pro) |
-| `windows/`          | FileForge 2.0 — Windows app        | PyInstaller `FileForge.exe` (browser + suggestions + history) |
-| `android2/`         | Strategy 2 — Android GUI           | `com.fileforge2.app` — Compose + Chaquopy (ranked targets + history) |
-| `magisk-module/`    | Strategy 9 — Magisk module         | Flashable system-wide install                |
-| `scripts/`          | Fulfillment / packaging            | License issuing, Magisk zip builder          |
-
-## FileForge 2.0 — discovery & suggestion layer
-
-Three extra CLIs sit *on top of* the conversion engine to help you find
-FileForge checkouts and figure out what to convert:
-
+**Linux/macOS (dev):**
 ```bash
-fileforge-discover                 # find & normalize FileForge instances on disk
-fileforge-suggest ./assets         # scan a directory, suggest conversions
-fileforge-cli --dir . --discover   # unified report: aliases + matrix + recommendations
+pip install -r backend/requirements.txt
+npm install
+cd backend && ./run_backend.sh &        # :8091
+./run_worker.sh &                       # needs redis-server running
+cd .. && npm run dev                    # :8090
 ```
 
-`fileforge-suggest --emit-scripts ./out --source png --target jpg` writes
-`run_conversions.sh` / `run_conversions.ps1` that drive `fileforge convert`.
-Docs: [DISCOVERY.md](DISCOVERY.md), [CONVERSIONS.md](CONVERSIONS.md),
-[USER_FLOW.md](USER_FLOW.md). One-shot setup: `./bootstrap.sh`
-([BOOTSTRAP.md](BOOTSTRAP.md)).
+Open `http://127.0.0.1:8090/conversion-dashboard`.
 
-Two apps are built on this layer: a Windows desktop app packaged as
-`FileForge.exe` ([windows/](windows/), [WINDOWS_SETUP.md](windows/WINDOWS_SETUP.md))
-and a re-branded Android build `com.fileforge2.app`
-([android2/](android2/), [ANDROID_SETUP.md](android2/ANDROID_SETUP.md)).
+## What was actually broken, and what I fixed
 
-## Tiers
+I read every file in both directories before touching anything — this
+isn't a rewrite from the spec alone, it's a real merge. Here's what was
+actually wrong with the code as it existed:
 
-| Tier           | Package                                      |
-|----------------|----------------------------------------------|
-| **Free**       | CLI tool                                     |
-| **Pro**        | Advanced features, GUI, automation, cloud    |
-| **Enterprise** | Licensing, API access, support, custom builds|
+**Backend never really worked:**
+- `server.py` and four `server_*_patch.py` files (batch, queue, thumbnails,
+  compression) each created their **own separate `FastAPI()` instance**.
+  `server.py` never imported any of them. Only `/convert` ever actually
+  ran on the live server — `/batch-convert`, `/queue-convert`,
+  `/thumbnail/*`, `/compress/video` all 404'd. Fixed by merging all five
+  into one `app` via `APIRouter`, and verified all 15 routes respond
+  (tested with real files through ffmpeg/ImageMagick, not just imports).
+- `server.py` used `from .engine import ...` (relative import) while
+  `run_backend.sh` ran `uvicorn server:app` directly — that combination
+  throws `ImportError: attempted relative import with no known parent
+  package` the moment any endpoint is hit. Switched every backend module
+  to absolute imports.
+- `backend/queue.py` shadowed Python's stdlib `queue` module for every
+  other file in the package. Renamed to `ff_queue.py` and updated
+  `run_worker.sh` and `server.py` accordingly.
+- `engine.py`'s SVG→PNG and HEIC→JPG special cases were dead code — a
+  broader `if ext in [".png", ...]` check above them caught those
+  extensions first, so the special-cased converters could never run.
+  Reordered so specific cases are checked before general ones.
+- `requirements.txt` was missing `redis`, despite `ff_queue.py` and
+  `run_worker.sh` depending on it.
 
+**Frontend was mostly unwired scaffolding:**
+- `wire_endpoints.sh` and `wire_ui_components.sh` — which generate the 6
+  missing API routes and all 5 dashboard components — were never
+  actually run. None of their output files existed anywhere in either
+  directory. I used their code as the intended design and actually
+  generated the files.
+- Those scripts' heredocs had a literal stray `\;` baked into every
+  `const BACKEND = "...":` line, which would have broken the TypeScript
+  build the moment they were run. Fixed.
+- `fileforge-web-site/app/api/convert/route.ts` was a JSON-based mock
+  that never called any backend. `fileforge/app/api/convert/route.ts`
+  was the real, working multipart proxy. Kept the real one; the mock
+  version of `app/conversion/page.tsx` that matched it is gone too.
+- **The project would not have built at all.** `package.json` pins
+  Tailwind v4, but `globals.css` used Tailwind v3's `@tailwind base/
+  components/utilities` syntax with no `@config` directive — v4 never
+  loaded `tailwind.config.js`'s custom theme colors, so every
+  `fileforgeBg`/`fileforgeAccent`/etc. class in every component would
+  fail the build with "Cannot apply unknown utility class." Fixed by
+  switching to `@import "tailwindcss";` plus `@config
+  "../tailwind.config.js";`. I confirmed this by actually running
+  `next build` — first reproducing the failure, then verifying the
+  fix compiles clean and the compiled CSS contains the real theme
+  rules (`#0f0f0f` background, `#ff6b00` accent, etc.).
+- Next.js 16 also hard-errors on `next build` if a custom `webpack()`
+  config exists without an explicit Turbopack opt-out — it doesn't
+  silently fall back the way earlier versions did. Added `--webpack`
+  to the `build` script (it was already on `dev`), and dropped the
+  `eslint` key from `next.config.js`, which Next 16 now rejects outright.
+- `@types/react-dom` was referenced in `tsconfig.json`'s `types` array
+  but never added to `package.json` — `tsc` failed immediately. Added it.
+- `app/page.tsx` used `ff-card-title` / `ff-hero-title` / etc. classes
+  that were never defined in `globals.css` — silently unstyled. Added
+  the missing tokens.
+- The dynamic route handlers (`queue-status/[jobId]`, etc.) used
+  `{ params }: any` with synchronous `params.jobId` access — Next.js 15+
+  made route params a `Promise`, so this throws at runtime on the
+  pinned Next 16. Fixed to `await params` throughout.
+- Dashboard API routes (`/api/dashboard/jobs|queue|thumbs`) returned
+  hardcoded fake data. They now proxy to real backend endpoints I added
+  (`/dashboard/jobs`, `/dashboard/queue`, `/dashboard/thumbs`) backed by
+  actual job history and real Redis queue depth.
+- The 5 dashboard components had a real type bug: buttons used
+  `onClick={handleSubmit}` where `handleSubmit` was typed to accept a
+  `React.FormEvent`, not a `MouseEvent` — wrapped each in a proper
+  `<form onSubmit={...}>` instead, which also gets you Enter-to-submit
+  for free. `Thumbnails.tsx` had no error handling at all — a failed
+  conversion would try to render an error-JSON response as an image.
+  Added proper `res.ok` checks throughout.
 
-## Everything is free
+**Scripts:**
+- `fileforge-cli` did an unconditional `shift` that crashes on zero
+  arguments, and had no file-existence checks before handing paths to
+  curl. Fixed both, added a proper `--help`-style usage screen.
+- `fileforge-launcher.sh` never cleaned up its background processes —
+  Ctrl+C left uvicorn/worker/npm orphaned. Added a `trap ... EXIT INT
+  TERM` cleanup handler and a final `wait`. Also fixed the hardcoded
+  `$HOME/fileforge-web-site` path now that everything lives in one
+  directory, and it derives its root from its own location instead of
+  assuming `$HOME/fileforge`.
 
-FileForge is **completely free** — every feature (batch, parallel processing,
-OCR, PDF merge/split, video presets, TTS) is available to everyone with no
-license required:
-
-```bash
-fileforge batch ./images png jpg --recursive --workers 8
-fileforge video clip.mov out.mp4 --preset web-720p
-```
-
-The Ed25519 licensing system and the license server are **kept in the repo but
-dormant** — `licensing.require()` is a no-op, so nothing is gated. If you ever
-want to reintroduce paid tiers, restore the tier check in
-`src/fileforge/licensing.py` (the original code is preserved in a comment there)
-and re-enable the `license-server/`.
-
-## Run the Cloud API locally
-
-```bash
-pip install -e '.[cloud]'
-cd cloud-api && uvicorn app.main:app --reload
-# POST a file:
-curl -s -H 'X-API-Key: demo-lifetime' \
-     -F file=@notes.md 'http://127.0.0.1:8000/v1/convert?target=html' -o out.html
-```
-
-## Development
-
-```bash
-pip install -e '.[dev]'
-pytest -q
-```
-
-## License
-
-Core engine and CLI: **MIT** (see `LICENSE`). Pro/Cloud/Enterprise builds and
-assets are commercial; see the monetization plan.
+Everything above was verified by actually running it in a sandboxed
+Linux container — real `ffmpeg`/`ImageMagick` conversions, a real Redis
+queue processed by the actual worker loop, a real `next build`, and the
+full browser → Next.js → FastAPI proxy chain end to end — not just
+written and assumed to work.

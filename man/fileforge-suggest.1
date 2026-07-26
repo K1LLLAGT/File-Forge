@@ -1,0 +1,25 @@
+.TH FILEFORGE-SUGGEST 1 "FileForge 2.0"
+.SH NAME
+fileforge-suggest \- suggest conversions based on real files
+.SH SYNOPSIS
+.B fileforge-suggest
+.RB [ --dir " DIR" ]
+.RB [ --limit " N" ]
+.RB [ --json ]
+.SH DESCRIPTION
+fileforge-suggest inspects files in a directory and suggests possible
+conversions based on file types, extensions, and known workflows.
+.SH OPTIONS
+.TP
+.BR --dir " DIR"
+Directory to inspect. Defaults to current directory.
+.TP
+.BR --limit " N"
+Limit the number of suggestions.
+.TP
+.BR --json
+Output suggestions as JSON.
+.SH EXAMPLES
+.B fileforge-suggest --dir . --limit 10
+.br
+Suggest up to 10 conversions for files in the current directory.
