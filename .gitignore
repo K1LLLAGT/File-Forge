@@ -25,6 +25,9 @@ backend/thumbs/*
 .env
 .env.local
 
+# Launcher debug-mode logs
+logs/
+
 # Editor/OS junk
 *.bak
 *.save
