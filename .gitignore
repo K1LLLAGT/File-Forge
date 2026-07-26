@@ -29,3 +29,4 @@ backend/thumbs/*
 .DS_Store
 tsconfig.tsbuildinfo
 *.tsbuildinfo
+logs/

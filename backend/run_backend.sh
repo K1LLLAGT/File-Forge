@@ -10,5 +10,5 @@ cd "$(dirname "$0")"
 
 pip install -r requirements.txt --quiet
 
-echo "[fileforge-backend] starting on 127.0.0.1:8091"
-uvicorn server:app --host 127.0.0.1 --port 8091
+echo "[fileforge-backend] starting on 127.0.0.1:8091 (log-level: ${FILEFORGE_LOG_LEVEL:-info})"
+uvicorn server:app --host 127.0.0.1 --port 8091 --log-level "${FILEFORGE_LOG_LEVEL:-info}"
