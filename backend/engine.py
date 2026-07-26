@@ -13,6 +13,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+from pathlib import Path
 
 FFMPEG = "ffmpeg"
 IMAGEMAGICK = "convert"
@@ -26,6 +27,25 @@ IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".tiff"}
 VIDEO_EXTS = {".mp4", ".mkv", ".mov", ".avi", ".webm"}
 AUDIO_EXTS = {".mp3", ".wav", ".flac", ".aac", ".ogg", ".m4a"}
 DOC_EXTS = {".docx", ".pptx", ".xlsx", ".doc", ".ppt", ".xls"}
+
+# Optional: the separate src/fileforge CLI/library ships a much broader
+# conversion registry (PDF text extraction, subtitles, config formats,
+# markup, encoding, structured data, dev-data formats, QR/ASCII-art, SVG
+# and PDF rasterization). If it's installed (`pip install -e .` from the
+# repo root — see scripts/install_conversion_tools.sh), convert_generic()
+# falls back to it for any pair not already handled directly above. This
+# is a deliberate exception to "the web app and the CLI/apps product share
+# no code" — reusing a well-tested registry beats re-implementing PDF/OCR/
+# subtitle/config logic a second time from scratch.
+try:
+    from fileforge.core.registry import registry as _fileforge_registry
+    from fileforge.core.registry import load_builtin_converters as _load_fileforge_converters
+
+    _load_fileforge_converters()
+    _FILEFORGE_AVAILABLE = True
+except ImportError:
+    _fileforge_registry = None
+    _FILEFORGE_AVAILABLE = False
 
 
 class ConversionError(RuntimeError):
@@ -116,6 +136,38 @@ def extract_tar(input_path: str, output_dir: str) -> None:
 
 
 # -----------------------------
+# fileforge PACKAGE FALLBACK (subtitles, config/data formats, markup,
+# encoding, PDF text extraction, QR/ASCII art, SVG/PDF rasterization, etc.)
+# -----------------------------
+def _convert_via_fileforge_registry(input_path: str, output_path: str, in_ext: str, out_ext: str) -> bool:
+    """Try the src/fileforge registry. Returns True if it handled the
+    conversion, False if fileforge isn't installed or has no route at all
+    (direct or chained) for this pair — caller should then raise."""
+    if not _FILEFORGE_AVAILABLE:
+        return False
+
+    src, tgt = in_ext.lstrip("."), out_ext.lstrip(".")
+
+    converter = _fileforge_registry.get(src, tgt)
+    if converter is not None and converter.available():
+        converter.fn(Path(input_path), Path(output_path))
+        return True
+
+    chain = _fileforge_registry.find_path(src, tgt)
+    if chain:
+        current_input = Path(input_path)
+        tmp_dir = Path(output_path).parent
+        for i, hop in enumerate(chain):
+            is_last = i == len(chain) - 1
+            hop_output = Path(output_path) if is_last else tmp_dir / f".hop{i}-{hop.target_ext}.{hop.target_ext}"
+            hop.fn(current_input, hop_output)
+            current_input = hop_output
+        return True
+
+    return False
+
+
+# -----------------------------
 # GENERIC DISPATCHER
 # -----------------------------
 def convert_generic(input_path: str, output_path: str) -> None:
@@ -148,5 +200,12 @@ def convert_generic(input_path: str, output_path: str) -> None:
         return convert_video(input_path, output_path)
     if out_ext in AUDIO_EXTS:
         return convert_audio(input_path, output_path)
+
+    # Everything else this project doesn't have a direct route for —
+    # subtitles, config/data formats, markup, encoding, PDF text extraction,
+    # QR codes, ASCII art, SVG/PDF rasterization — falls back to the
+    # src/fileforge registry if it's installed.
+    if _convert_via_fileforge_registry(input_path, output_path, in_ext, out_ext):
+        return
 
     raise ConversionError(f"Unsupported conversion: {input_path} -> {output_path}")

@@ -30,6 +30,7 @@ from fastapi import APIRouter, FastAPI, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 
+import engine
 from batch import batch_convert
 from compression import compress_video
 from engine import ConversionError, convert_generic
@@ -297,6 +298,33 @@ async def dashboard_thumbs():
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+@app.get("/formats")
+async def formats():
+    """List every conversion pair currently reachable, so the dashboard/CLI
+    can show real capabilities instead of a hardcoded example list."""
+    direct = {
+        "svg->png": "ImageMagick", "heic->jpg": "ImageMagick",
+        "*video->*audio": "ffmpeg (audio extraction)",
+        "docx/pptx/xlsx/doc/ppt/xls->pdf": "LibreOffice",
+        "docx/md/txt->html": "Pandoc", "md->pdf": "Pandoc",
+        "*->png/jpg/jpeg/webp/gif/bmp/tiff": "ImageMagick",
+        "*->mp4/mkv/mov/avi/webm": "ffmpeg",
+        "*->mp3/wav/flac/aac/ogg/m4a": "ffmpeg",
+    }
+    fallback = []
+    if engine._FILEFORGE_AVAILABLE:
+        fallback = [
+            {"from": c.source_ext, "to": c.target_ext, "description": c.description,
+             "available": c.available()}
+            for c in engine._fileforge_registry.routes()
+        ]
+    return {
+        "direct": direct,
+        "fallback": fallback,
+        "fallbackEnabled": engine._FILEFORGE_AVAILABLE,
+    }
 
 
 for router in (convert_router, batch_router, queue_router, thumbnail_router, compression_router, dashboard_router):
